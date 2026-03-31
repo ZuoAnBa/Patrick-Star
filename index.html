@@ -497,7 +497,8 @@
             const index = Years.indexOf(parseInt(this.value));
             CurrentYear = index;
             renderTable()
-            console.log(CurrentYear);
+
+            FreshUIHistroypanel();
 
         });
         function InitApp() {
@@ -522,19 +523,22 @@
         // 切换模式按钮事件
         btnNewao.onclick = () => {
             CurrentMode = FuncMode.Newao;
-            renderTable()
+            renderTable();
+            FreshUIHistroypanel();
             highlightButton(btnNewao);
 
         };
         btnOldao.onclick = () => {
             CurrentMode = FuncMode.Oldao;
-            renderTable()
+            renderTable();
+            FreshUIHistroypanel();
             highlightButton(btnOldao);
 
         };
         btnXianggang.onclick = () => {
             CurrentMode = FuncMode.Xianggang;
-            renderTable()
+            renderTable();
+            FreshUIHistroypanel();
             highlightButton(btnXianggang);
 
         };
@@ -599,6 +603,7 @@
             console.log(Histroymodule);
             saveHistory();
             loadingHistroy.style.display = "none";
+            FreshUIHistroypanel();
         };
         function fillHistory(module, apiData) {
             apiData.forEach(item => {
@@ -824,6 +829,8 @@
             }
             console.log(Histroymodule);
             renderTable()
+            document.getElementById("btn").click();
+            document.getElementById("btnTeNum").click();
 
         });
         window.addEventListener("beforeunload", () => {
