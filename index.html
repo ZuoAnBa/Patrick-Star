@@ -34,7 +34,7 @@
         .leftArea {
             display: flex;
             flex-direction: column;
-            width:450px; /* 左边占 50% */
+            width:400px; /* 左边占 50% */
             padding: 10px;
         }
 
@@ -43,7 +43,7 @@
             flex: 1; /* 自动填充剩余 */
             display: flex;
             flex-direction: column;
-            max-width: 600px;
+            max-width: 550px;
             max-height: 600px;
             overflow-y: auto;
             padding: 10px;
@@ -76,8 +76,8 @@
         }
 
         .num {
-            width: 40px;
-            height: 40px;
+            width: 35px;
+            height: 35px;
             border: 1px solid #ccc;
             border-radius: 6px;
             text-align: center;
@@ -142,11 +142,11 @@
             display: flex;
             justify-content: flex-start;
             align-items: flex-start;
-            gap: 15px; /* 右侧间距 */
+            gap: 0px; /* 右侧间距 */
         }
         /* =========================1️⃣ 大容器（面板）========================= */
         .panel-grid {
-            width: 480px;
+            width: 400px;
             height: 450px;
             display: flex;
             flex-direction: column;
@@ -192,7 +192,7 @@
         }
 
         .quad-box {
-            width: 220px;
+            width: 180px;
             height: 60px;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -201,16 +201,16 @@
         }
 
         .head-box {
-            width: 220px;
+            width: 180px;
             height: 60px;
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(5, minmax(0, 1fr)); /* ⭐关键 */
             grid-template-rows: repeat(3, 1fr);
             border: 2px solid #333;
         }
 
         .Wave-box {
-            width: 222px;
+            width: 180px;
             height: 60px;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -1137,7 +1137,7 @@
             });
 
             result.rate.forEach((v, i) => {
-                if (rateEls[i]) rateEls[i].innerText = v + "%";
+                if (rateEls[i]) rateEls[i].innerText = v ;
             });
         }
         function renderWave(result) {
