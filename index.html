@@ -1,4 +1,3 @@
-﻿
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -1103,3 +1102,1103 @@
     </script>
 </body>
 </html>
+
+<!--=======
+﻿
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="apple-touch-icon" href="icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="比奇堡恶霸">
+    <title>比奇堡恶霸</title>
+
+    <style>
+        /* 全局样式 */
+        body {
+            font-family: Arial;
+        }
+        /* 鼠标悬停在按钮上时显示手型 */
+        button {
+            cursor: pointer;
+        }
+
+        /* 所有 <textarea> 都固定宽 180px，高 80px */
+        textarea {
+            width: 180px;
+            height: 80px;
+        }
+
+        /* 水平排列元素，间距 10px，高度统一 */
+        .top {
+            display: flex;
+            gap: 10px;
+            align-items: stretch; /* 高度统一 */
+        }
+
+        /* 左侧整体 */
+        .leftArea {
+            display: flex;
+            flex-direction: column;
+            width: 50%; /* 左边占 50% */
+            padding: 10px;
+        }
+
+        /* 右侧区域 */
+        .rightArea {
+            display: flex;
+            flex-direction: column;
+            width: 600px; /* 右边固定宽度 */
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        /* 阈值容器 */
+        .thresholdBox {
+            display: flex; /* 将容器变成 Flex 布局，默认方向是水平排列 */
+            gap: 5px; /* 水平间距是 5px */
+        }
+
+        /* 排列按钮 */
+        .top button {
+            background-color: #749a4c;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+
+        /* 样式设置 */
+        .row {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .label {
+            width: 50px;
+        }
+
+        .num {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            margin: 2px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .plus {
+            margin: 0 6px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .red {
+            background: #ffd6d6;
+            color: #b00000;
+        }
+
+        .blue {
+            background: #dce7ff;
+            color: #0033aa;
+        }
+
+        .green {
+            background: #ddffea;
+            color: #006633;
+        }
+
+        /* Loading 样式 */
+        .loading {
+            display: none;
+            align-items: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 3px solid #ccc;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 将左区域与右区域紧贴 */
+        .container {
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            gap: 10px; /* 右侧间距 */
+        }
+        /* =========================1️⃣ 大容器（面板）========================= */
+        .panel-grid {
+            width: 480px;
+            height: 450px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 8px;
+            border: 2px solid #333;
+            box-sizing: border-box;
+        }
+
+        .group {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(var(--cols, 2), 1fr);
+        }
+
+        .cell {
+            display: grid;
+            place-items: center;
+            border: 1px solid #999;
+            box-sizing: border-box;
+            line-height: 1;
+        }
+
+        .labelquad {
+            font-size: 14px;
+            background: #f5f5f5;
+        }
+
+        .valuenum {
+            font-size: 12px;
+        }
+
+        .valuequad {
+            font-size: 12px;
+        }
+
+        .leftquad {
+            color: #d33;
+        }
+
+        .rightquad {
+            color: #3366cc;
+        }
+
+        .quad-box {
+            width: 220px;
+            height: 60px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            border: 2px solid #333;
+        }
+
+        .head-box {
+            width: 220px;
+            height: 60px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            border: 2px solid #333;
+        }
+
+        .Wave-box {
+            width: 222px;
+            height: 60px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            border: 2px solid #333;
+        }
+    </style>
+</head>
+
+<body>-->
+
+    <!-- 顶部按钮和加载提示 -->
+    <!--<div class="top">
+
+        <div class="leftArea">
+            <div class="thresholdBox">
+                <button id="btn">获取开奖</button>
+                <div id="loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <span>正在获取开奖数据...</span>
+                </div>
+
+            </div>
+
+        </div>
+        <div class="rightArea">
+            <div class="thresholdBox">
+                <select id="yearSelect"></select>
+                <button id="btnNewao">新澳</button>
+                <button id="btnOldao">老澳</button>
+                <button id="btnXianggang">香港</button>
+                <button id="btnUpdataHistroy">更新</button>
+                <div id="loadingHistroy" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <span>正在更新历史开奖...</span>
+                </div>
+            </div>
+
+        </div>
+
+
+
+    </div>-->
+
+    <!-- 左右布局 -->
+    <!--<div class="container">-->
+
+        <!-- 左边区域 -->
+        <!--<div class="leftArea">
+            <div class="thresholdBox">
+                <span>第 <strong id="qi_na"></strong> 期</span>
+                <span style="margin-left:20px;">开奖时间：<strong id="time_na"></strong></span>
+            </div>-->
+            <!-- 新澳部分 -->
+            <!--<div class="row">
+                <span class="label">新澳：</span>
+                <div class="num" id="na1"></div>
+                <div class="num" id="na2"></div>
+                <div class="num" id="na3"></div>
+                <div class="num" id="na4"></div>
+                <div class="num" id="na5"></div>
+                <div class="num" id="na6"></div>
+                <span class="plus">+</span>
+                <div class="num" id="na7"></div>
+            </div>
+
+            <div class="thresholdBox">
+                <span>第 <strong id="qi_la"></strong> 期</span>
+                <span style="margin-left:20px;">开奖时间：<strong id="time_la"></strong></span>
+            </div>-->
+            <!-- 老澳部分 -->
+            <!--<div class="row">
+                <span class="label">老澳：</span>
+                <div class="num" id="la1"></div>
+                <div class="num" id="la2"></div>
+                <div class="num" id="la3"></div>
+                <div class="num" id="la4"></div>
+                <div class="num" id="la5"></div>
+                <div class="num" id="la6"></div>
+                <span class="plus">+</span>
+                <div class="num" id="la7"></div>
+            </div>
+            <div class="thresholdBox">
+                <span>第 <strong id="qi_hk"></strong> 期</span>
+                <span style="margin-left:20px;">开奖时间：<strong id="time_hk"></strong></span>
+            </div>-->
+
+            <!-- 香港部分 -->
+            <!--<div class="row">
+                <span class="label">香港：</span>
+                <div class="num" id="hk1"></div>
+                <div class="num" id="hk2"></div>
+                <div class="num" id="hk3"></div>
+                <div class="num" id="hk4"></div>
+                <div class="num" id="hk5"></div>
+                <div class="num" id="hk6"></div>
+                <span class="plus">+</span>
+                <div class="num" id="hk7"></div>
+            </div>
+            <div class="top">
+                <button id="btnTeNum">特码</button>
+                <button id="btnPingNum">平码二中二</button>
+            </div>
+            <div class="panel-grid">-->
+
+                <!-- ================= 2列：大小单双 ================= -->
+                <!--<div class="group" style="--cols: 2;">
+
+                    <div class="quad-box">
+                        <div class="cell labelquad">大</div>
+                        <div class="cell labelquad">小</div>
+
+                        <div class="cell valuenum leftquad">20</div>
+                        <div class="cell valuenum rightquad">40</div>
+
+                        <div class="cell valuequad leftquad">60%</div>
+                        <div class="cell valuequad rightquad">40%</div>
+                    </div>
+                    <div class="quad-box">
+                        <div class="cell labelquad">单</div>
+                        <div class="cell labelquad">双</div>
+                        <div class="cell valuenum leftquad">20</div>
+                        <div class="cell valuenum rightquad">40</div>
+                        <div class="cell valuequad leftquad">55%</div>
+                        <div class="cell valuequad rightquad">45%</div>
+                    </div>
+                </div>
+
+
+                <div class="group" style="--cols: 2;">
+                    <div class="head-box">
+                        <div class="cell">0头</div>
+                        <div class="cell">1头</div>
+                        <div class="cell">2头</div>
+                        <div class="cell">3头</div>
+                        <div class="cell">4头</div>
+                        <div class="cell valuenum ">10</div>
+                        <div class="cell valuenum ">10</div>
+                        <div class="cell valuenum ">10</div>
+                        <div class="cell valuenum ">10</div>
+                        <div class="cell valuenum ">10</div>
+                        <div class="cell valuequad">10%</div>
+                        <div class="cell valuequad">20%</div>
+                        <div class="cell valuequad">30%</div>
+                        <div class="cell valuequad">25%</div>
+                        <div class="cell valuequad">15%</div>
+                    </div>
+                    <div class="Wave-box">
+                        <div class="cell">红波</div>
+                        <div class="cell">绿波</div>
+                        <div class="cell">蓝波</div>
+                        <div class="cell valuenum ">10</div>
+                        <div class="cell valuenum ">10</div>
+                        <div class="cell valuenum ">10</div>
+                        <div class="cell valuequad">30%</div>
+                        <div class="cell valuequad">30%</div>
+                        <div class="cell valuequad">40%</div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>-->
+
+        <!-- 右边区域 -->
+        <!--<div class="rightArea">
+
+            <table id="sortTable" border="1" style="width:100%; border-collapse:collapse; text-align:center;">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>期数</th>
+                        <th>号码</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        const record = {
+            issue: "20260328-001",
+            time: "2026-03-28 20:30",
+            numbers: [1, 5, 12, 23, 34, 45, 49]
+        };
+        class ValueModuleHistroy {
+            constructor() {
+                this.Year = 0;
+                this.Num = 0;
+                this.records = [];
+            }
+
+            addRecord(issue, time, nums, te) {
+                this.records.push({
+                    issue,
+                    time,
+                    nums,
+                    te
+                });
+
+                // 👉 自动更新数量（关键🔥）
+                this.Num = this.records.length;
+            }
+        }
+        const sources = {
+            "新澳": "https://kj6.kkj.app:1888/data/v_am.json",
+            "老澳": "https://kj6.kkj.app:1888/data/v_oldam.json",
+            "香港": "https://kj6.kkj.app:1888/data/v_xg.json"
+        };
+
+        let tableData = {
+            新澳: [],
+            老澳: [],
+            香港: []
+        };
+        const Years = [2026, 2025, 2024, 2023];
+        const 红波 = [1, 2, 7, 8, 12, 13, 18, 19, 23, 24, 29, 30, 34, 35, 40, 45, 46];
+        const 蓝波 = [3, 4, 9, 10, 14, 15, 20, 25, 26, 31, 36, 37, 41, 42, 47, 48];
+        const 绿波 = [5, 6, 11, 16, 17, 21, 22, 27, 28, 32, 33, 38, 39, 43, 44, 49];
+        const animals = ["马", "蛇", "龙", "兔", "虎", "牛", "鼠", "猪", "狗", "鸡", "猴", "羊"];
+        const FuncMode = { Newao: 0, Oldao: 1, Xianggang: 2, FuncModeCNT: 3 };
+        const FuncTongJi = { Te: 0, Ping: 1 };
+        const ModeToG = {
+            [FuncMode.Newao]: "am",
+            [FuncMode.Oldao]: "oldam",
+            [FuncMode.Xianggang]: "xg"
+        };
+        const FuncModeYears = Object.fromEntries(
+            Years.map((y, i) => [`Y${y}`, i])
+        );
+        const ModeDataCNT = 6;
+        const FuncModeDataCNT = FuncMode.FuncModeCNT * ModeDataCNT;
+        const FuncHistroyModeDataCNT = FuncMode.FuncModeCNT * Years.length;
+        let CurrentMode = FuncMode.Newao;
+        let CurrentYear = FuncModeYears.Y2026;
+        let CurrentTongJi = FuncTongJi.Te;
+        const Histroyresult = {
+            bigSmall: {
+                num: [0, 0],
+                rate: [0, 0]
+            },
+            singleDouble: {
+                num: [0, 0],
+                rate: [0, 0]
+            },
+            head: {
+                num: [0, 0, 0, 0, 0],
+                rate: [0, 0, 0, 0, 0]
+            },
+            wave: {
+                num: [0, 0, 0],
+                rate: [0, 0, 0]
+            }
+        };
+        let Histroymodule = [];
+
+        for (let i = 0; i < FuncMode.FuncModeCNT; i++) {
+            Histroymodule[i] = [];
+            for (let j = 0; j < Years.length; j++) {
+                const vm = new ValueModuleHistroy();
+                vm.Year = Years[j];
+                vm.Num = 0;
+                Histroymodule[i][j] = vm;
+            }
+        }
+
+
+        function initYearSelect() {
+            const select = document.getElementById("yearSelect");
+            select.innerHTML = "";
+            Years.forEach(year => {
+                const option = document.createElement("option");
+                option.value = year;
+                option.textContent = year + "年";
+                select.appendChild(option);
+            });
+            // 默认选中当前年份
+            select.value = 2026;
+        }
+
+        document.getElementById("yearSelect").addEventListener("change", function () {
+            const index = Years.indexOf(parseInt(this.value));
+            CurrentYear = index;
+            renderTable()
+            console.log(CurrentYear);
+
+        });
+        function InitApp() {
+            initYearSelect();
+        }
+        InitApp();
+
+
+        //按键高亮功能
+        function highlightButton(btn) {
+            // 先恢复普通颜色
+            btnNewao.style.backgroundColor = "";
+            btnOldao.style.backgroundColor = "";
+            btnXianggang.style.backgroundColor = "";
+            // 高亮当前按钮
+            btn.style.backgroundColor = "lightblue";
+        }
+        //三个将池切换 按键
+        const btnNewao = document.getElementById("btnNewao");
+        const btnOldao = document.getElementById("btnOldao");
+        const btnXianggang = document.getElementById("btnXianggang");
+        // 切换模式按钮事件
+        btnNewao.onclick = () => {
+            CurrentMode = FuncMode.Newao;
+            renderTable()
+            highlightButton(btnNewao);
+
+        };
+        btnOldao.onclick = () => {
+            CurrentMode = FuncMode.Oldao;
+            renderTable()
+            highlightButton(btnOldao);
+
+        };
+        btnXianggang.onclick = () => {
+            CurrentMode = FuncMode.Xianggang;
+            renderTable()
+            highlightButton(btnXianggang);
+
+        };
+        highlightButton(btnNewao);
+        /*
+         <button id="btnTeNum">特码</button>
+     <button id="btnPingNum">平码</button>
+     */
+        const btnTeNum = document.getElementById("btnTeNum");
+        const btnPingNum = document.getElementById("btnPingNum");
+        btnTeNum.onclick = () => {
+            btnPingNum.style.backgroundColor = "";
+            btnTeNum.style.backgroundColor = "lightblue";
+            CurrentTongJi = FuncTongJi.Te;
+            FreshUIHistroypanel();
+
+        };
+        btnPingNum.onclick = () => {
+            btnTeNum.style.backgroundColor = "";
+            btnPingNum.style.backgroundColor = "lightblue";
+            CurrentTongJi = FuncTongJi.Ping;
+            FreshUIHistroypanel();
+
+        };
+
+        document.getElementById("btnUpdataHistroy").onclick = async () => {
+            loadingHistroy.style.display = "flex";
+            //const yearValue = Years[CurrentYear];
+
+            //switch (CurrentMode) {
+            //    case FuncMode.Newao: Histroymodule[CurrentMode][CurrentYear] = await loadHistoryToModule("am", yearValue); break;
+            //    case FuncMode.Oldao: Histroymodule[CurrentMode][CurrentYear] = await loadHistoryToModule("oldam", yearValue); break;
+            //    case FuncMode.Xianggang: Histroymodule[CurrentMode][CurrentYear] = await loadHistoryToModule("xg", yearValue); break;
+            //}
+            let tasks = [];
+
+            for (let mode = 0; mode < FuncMode.FuncModeCNT; mode++) {
+                for (let y = 0; y < Years.length; y++) {
+
+                    const g = ModeToG[mode];
+
+                    tasks.push(
+                        loadHistoryToModule(g, Years[y]).then(module => {
+                            return { mode, y, module };
+                        })
+                    );
+                }
+            }
+
+            let results = await Promise.all(tasks);
+
+            // 初始化容器
+            for (let r of results) {
+                if (!Histroymodule[r.mode]) {
+                    Histroymodule[r.mode] = {};
+                }
+
+                Histroymodule[r.mode][r.y] = r.module;
+            }
+
+            console.log("全部加载完成🔥", Histroymodule);
+            console.log(Histroymodule);
+            saveHistory();
+            loadingHistroy.style.display = "none";
+        };
+        function fillHistory(module, apiData) {
+            apiData.forEach(item => {
+                if (!item.num) return;
+
+                // 👉 拆分号码
+                let arr = item.num.split(",").map(n => parseInt(n));
+
+                let nums = arr.slice(0, 6); // 前6个
+                let te = arr[6];            // 特码
+
+                module.addRecord(
+                    parseInt(item.qishu),
+                    item.date,
+                    nums,
+                    te
+                );
+            });
+
+            // 👉 按期数排序
+            module.records.sort((a, b) => a.issue - b.issue);
+        }
+        async function loadHistoryToModule(g, y) {
+            let realUrl = `https://kj.9bkj.com:1888/kj?g=${g}&y=${y}&t=${Date.now()}`;
+            let url = "https://corsproxy.io/" + realUrl;
+
+            let res = await fetch(url);
+            let json = await res.json();
+
+            let module = new ValueModuleHistroy();
+            module.Year = y;
+
+            fillHistory(module, json.data);
+
+            return module;
+        }
+        function getColor(num) {
+            num = parseInt(num);
+            if (红波.includes(num)) return "red";
+            if (蓝波.includes(num)) return "blue";
+            if (绿波.includes(num)) return "green";
+            return "";
+        }
+
+        function getAnimal(num) {
+            return animals[(num - 1) % 12];
+        }
+        function fillRow(prefix, nums, te) {
+
+            for (let i = 0; i < 6; i++) {
+
+                let box = document.getElementById(prefix + (i + 1));
+
+                box.innerHTML =
+                    String(nums[i]).padStart(2, "0") +
+                    "<div style='font-size:12px'>" + getAnimal(nums[i]) + "</div>";
+
+                box.className = "num " + getColor(nums[i]);
+
+            }
+
+            let teBox = document.getElementById(prefix + "7");
+
+            teBox.innerHTML =
+                String(te).padStart(2, "0") +
+                "<div style='font-size:12px'>" + getAnimal(te) + "</div>";
+
+            teBox.className = "num " + getColor(te);
+
+        }
+        function setInfo(prefix, json) {
+
+            let qi = document.getElementById("qi_" + prefix);
+            let time = document.getElementById("time_" + prefix);
+
+            let year = json.Year;
+            let month = String(json.Moon).padStart(2, "0");
+            let day = String(json.Day).padStart(2, "0");
+
+            let cleanTime = json.Time.replace("点", ":").replace("分", "");
+
+            qi.innerText = json.Qi;
+
+            time.innerText = `${year}-${month}-${day} ${cleanTime} ${json.Week}`;
+        }
+        window.addEventListener("DOMContentLoaded", () => {
+
+            document.getElementById("btn").onclick = async () => {
+
+                loading.style.display = "flex";
+
+                let tasks = Object.keys(sources).map(async (name) => {
+
+                    try {
+
+                        let realUrl = sources[name] + "?t=" + Date.now();
+                        let url = "https://corsproxy.io/" + realUrl;
+
+                        let res = await fetch(url);
+
+                        if (!res.ok) throw new Error("HTTP " + res.status);
+
+                        let json = await res.json();
+
+                        let nums = Object.values(json.Data).map(v => v.number);
+
+                        let te = nums.pop();
+                        addToTable(name, json, nums, te);
+                        if (name === "新澳") {
+                            fillRow("na", nums, te);
+                            setInfo("na", json);
+                        }
+
+                        if (name === "老澳") {
+                            fillRow("la", nums, te);
+                            setInfo("la", json);
+                        }
+
+                        if (name === "香港") {
+                            fillRow("hk", nums, te);
+                            setInfo("hk", json);
+                        }
+
+                    } catch (e) {
+                        console.log(name + " 获取失败:", e);
+                    }
+
+                });
+                await Promise.all(tasks);
+
+                loading.style.display = "none";
+            };
+
+        });
+        function addToTable(name, json, nums, te) {
+
+            let year = json.Year;
+            let month = String(json.Moon).padStart(2, "0");
+            let day = String(json.Day).padStart(2, "0");
+
+            tableData[name].unshift({
+                date: `${year}-${month}-${day}`,
+                qi: json.Qi,
+                nums: nums,
+                te: te
+            });
+
+
+        }
+
+        function renderTable() {
+
+            let tbody = document.querySelector("#sortTable tbody");
+            tbody.innerHTML = "";
+
+            let year = CurrentYear;
+
+            let module = Histroymodule?.[CurrentMode]?.[year];
+
+            if (!module || !module.records) {
+                console.log("暂无数据");
+                return;
+            }
+
+            // 🔥 按期数倒序（大 -> 小）
+            let list = [...module.records].sort((a, b) => b.issue - a.issue);
+
+            list.forEach(item => {
+
+                function buildNum(n) {
+                    return `
+                    <span class="num ${getColor(n)}"
+                          style="padding:3px 6px; margin:1px; display:inline-block;">
+                        ${String(n).padStart(2, "0")}
+                        <div style="font-size:11px;">
+                            ${getAnimal(n)}
+                        </div>
+                    </span>`;
+                }
+
+                let numbersHtml = "";
+
+                // 👉 前6个
+                for (let i = 0; i < 6; i++) {
+                    numbersHtml += buildNum(item.nums[i]);
+                }
+
+                numbersHtml += " + ";
+                numbersHtml += buildNum(item.te);
+
+                let tr = document.createElement("tr");
+
+                tr.innerHTML = `
+                <td>${item.time}</td>
+                <td>${item.issue}</td>
+                <td>${numbersHtml}</td>
+            `;
+
+                tbody.appendChild(tr);
+            });
+        }
+        window.addEventListener("DOMContentLoaded", () => {
+
+            // ===== 恢复 Histroymodule =====
+            const savedHistory = localStorage.getItem("Histroymodule");
+
+            if (savedHistory) {
+                try {
+                    const data = JSON.parse(savedHistory);
+
+                    // 如果你 Histroymodule 是数组
+                    if (Array.isArray(data)) {
+                        Histroymodule = data;
+                    }
+                    // 如果是对象结构（推荐）
+                    else {
+                        Histroymodule = data;
+                    }
+
+                } catch (e) {
+                    console.error("Histroymodule 恢复失败:", e);
+                }
+            }
+            console.log(Histroymodule);
+            renderTable()
+
+        });
+        window.addEventListener("beforeunload", () => {
+            try {
+                localStorage.setItem(
+                    "Histroymodule",
+                    JSON.stringify(Histroymodule)
+                );
+            } catch (e) {
+                console.error("保存 Histroymodule 失败:", e);
+            }
+        });
+        let historySaveTimer;
+
+        function saveHistory() {
+            clearTimeout(historySaveTimer);
+
+            historySaveTimer = setTimeout(() => {
+                try {
+                    localStorage.setItem(
+                        "Histroymodule",
+                        JSON.stringify(Histroymodule)
+                    );
+                    console.log("Histroymodule 自动保存");
+                } catch (e) {
+                    console.error("保存失败:", e);
+                }
+            }, 500);
+        }
+        function calcAllbigSmall(records, Flag) {
+
+            let totalBig = 0;
+            let totalSmall = 0;
+
+
+            let data;
+            for (let item of records) {
+                if (Flag == 0) data = item.te;
+                else if (Flag == 1) data = item.nums;
+
+                if (Flag == 0) {
+
+                    if (data >= 25) totalBig++;
+                    else totalSmall++;
+                } else {
+
+                    for (let v of data) {
+                        if (v >= 25) totalBig++;
+                        else totalSmall++;
+                    }
+                }
+            }
+
+            const total = totalBig + totalSmall;
+
+            return {
+                totalBig,
+                totalSmall,
+                bigRate: total ? (totalBig / total * 100).toFixed(2) : "0.00",
+                smallRate: total ? (totalSmall / total * 100).toFixed(2) : "0.00"
+            };
+        }
+        function calcAllOddEven(records, Flag) {
+
+            let totalOdd = 0;
+            let totalEven = 0;
+
+            let data;
+
+            for (let item of records) {
+
+                if (Flag == 0) data = item.te;      // 单值
+                else if (Flag == 1) data = item.nums; // 数组
+
+                if (Flag == 0) {
+
+                    if (data % 2 === 0) totalEven++;
+                    else totalOdd++;
+
+                } else {
+
+                    for (let v of data) {
+                        if (v % 2 === 0) totalEven++;
+                        else totalOdd++;
+                    }
+                }
+            }
+
+            const total = totalOdd + totalEven;
+
+            return {
+                totalOdd,
+                totalEven,
+                oddRate: total ? (totalOdd / total * 100).toFixed(2) : "0.00",
+                evenRate: total ? (totalEven / total * 100).toFixed(2) : "0.00"
+            };
+        }
+        function calcHead(records, Flag) {
+
+            let count = [0, 0, 0, 0, 0]; // 0~4头
+            let total = 0;
+
+            for (let item of records) {
+
+                const data = Flag == 0 ? item.te : item.nums;
+
+                if (Flag == 0) {
+
+                    const head = Math.floor(data / 10);
+
+                    if (count[head] !== undefined) {
+                        count[head]++;
+                        total++;
+                    }
+
+                } else {
+
+                    for (let v of data) {
+
+                        const head = Math.floor(v / 10);
+
+                        if (count[head] !== undefined) {
+                            count[head]++;
+                            total++;
+                        }
+                    }
+                }
+            }
+
+            return {
+                num: count,
+                rate: count.map(v =>
+                    total ? (v / total * 100).toFixed(2) : "0.00"
+                )
+            };
+        }
+ 
+        function calcWave(records, Flag) {
+
+            let red = 0, blue = 0, green = 0;
+            let total = 0;
+
+            const getWave = (v) => {
+                if (红波.includes(v)) return 0;
+                if (蓝波.includes(v)) return 1;
+                if (绿波.includes(v)) return 2;
+                return -1;
+            };
+
+            for (let item of records) {
+
+                const data = Flag == 0 ? item.te : item.nums;
+
+                if (Flag == 0) {
+
+                    const w = getWave(data);
+
+                    if (w === 0) red++;
+                    else if (w === 1) blue++;
+                    else if (w === 2) green++;
+
+                    total++;
+
+                } else {
+
+                    for (let v of data) {
+
+                        const w = getWave(v);
+
+                        if (w === 0) red++;
+                        else if (w === 1) blue++;
+                        else if (w === 2) green++;
+
+                        total++;
+                    }
+                }
+            }
+
+            return {
+                num: [red, blue, green],
+                rate: [
+                    total ? (red / total * 100).toFixed(2) : "0.00",
+                    total ? (blue / total * 100).toFixed(2) : "0.00",
+                    total ? (green / total * 100).toFixed(2) : "0.00"
+                ]
+            };
+        }
+        function renderBox(boxIndex, result) {
+
+            const box = document.querySelectorAll(".quad-box")[boxIndex];
+            if (!box) {
+                console.warn("box不存在:", boxIndex);
+                return;
+            }
+
+            const numEls = box.querySelectorAll(".valuenum");
+            const rateEls = box.querySelectorAll(".valuequad");
+
+            if (result.num && Array.isArray(result.num)) {
+                result.num.forEach((v, i) => {
+                    if (numEls[i]) numEls[i].innerText = v;
+                });
+            }
+
+            if (result.rate && Array.isArray(result.rate)) {
+                result.rate.forEach((v, i) => {
+                    if (rateEls[i]) rateEls[i].innerText = v + "%";
+                });
+            }
+        }
+        function renderHead(result) {
+
+            const box = document.querySelector(".head-box");
+            if (!box) return;
+
+            const numEls = box.querySelectorAll(".valuenum");
+            const rateEls = box.querySelectorAll(".valuequad");
+
+            result.num.forEach((v, i) => {
+                if (numEls[i]) numEls[i].innerText = v;
+            });
+
+            result.rate.forEach((v, i) => {
+                if (rateEls[i]) rateEls[i].innerText = v + "%";
+            });
+        }
+        function renderWave(result) {
+
+            const box = document.querySelector(".Wave-box");
+            if (!box) return;
+
+            const numEls = box.querySelectorAll(".valuenum");
+            const rateEls = box.querySelectorAll(".valuequad");
+
+            result.num.forEach((v, i) => {
+                if (numEls[i]) numEls[i].innerText = v;
+            });
+
+            result.rate.forEach((v, i) => {
+                if (rateEls[i]) rateEls[i].innerText = v + "%";
+            });
+        }
+        function FreshUIHistroypanel() {
+
+            if (!Histroymodule[CurrentMode][CurrentYear].records) return;
+
+            const records = Histroymodule[CurrentMode][CurrentYear].records;
+
+            // 1️⃣ 大小
+            const bigSmall = calcAllbigSmall(records, CurrentTongJi);
+
+            renderBox(0, {
+                num: [bigSmall.totalBig, bigSmall.totalSmall],
+                rate: [bigSmall.bigRate, bigSmall.smallRate]
+            });
+
+            // 2️⃣ 单双
+            const oddEven = calcAllOddEven(records, CurrentTongJi);
+
+            renderBox(1, {
+                num: [oddEven.totalOdd, oddEven.totalEven],
+                rate: [oddEven.oddRate, oddEven.evenRate]
+            });
+            const head = calcHead(records, CurrentTongJi);
+            renderHead(head);
+            const wave = calcWave(Histroymodule[CurrentMode][CurrentYear].records, CurrentTongJi);
+
+            renderWave(wave);
+        }
+    </script>
+</body>
+</html>-->
