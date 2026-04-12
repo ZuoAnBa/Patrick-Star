@@ -2356,37 +2356,66 @@
         // =============================================
         document.getElementById("addTotalYCBtn").addEventListener("click", () => {
 
-            let today = new Date().toLocaleDateString(); // 2026/4/12
-            let lastTime = BetPanelData.lastAddTotalTime;
+            let today = new Date().toLocaleDateString(); 
+            let lastTime = BetPanelData.lastAddTotalTime || "";
 
-            // 3. 如果有上次时间，并且是同一天 → 弹窗确认
-            // 如果有上次时间，并且是同一天 → 弹出你的自定义弹窗
+            console.log("今天日期：", today);
+            console.log("上次日期：", lastTime);
+            let isSameDay = false;
             if (lastTime) {
-                let lastDate = new Date(lastTime).toLocaleDateString();
-                if (lastDate === today) {
-                    // 👇 调用你自己写的弹窗！完全不改动你的代码！
- 
-                    showConfirm("⚠️ 您今天已经纳入过了！是否还要继续纳入？", function (result) {
-                        if (result) {
-                            let now = new Date();
-                            BetPanelData.lastAddTotalTime = now.toLocaleString(); // 完整时间
+                try {
+                    let lastDate = new Date(lastTime).toLocaleDateString();
+                    isSameDay = lastDate === today;
+                } catch (e) { }
+            }
 
-                            document.getElementById("lastAddTime").textContent = BetPanelData.lastAddTotalTime;
+            if (isSameDay) {
+                showConfirm("⚠️ 您今天已经纳入过了！是否还要继续纳入？", function (result) {
+                    if (result) {
+                        // 用户点了确认 → 执行
+                        doAddTotal();
+                    } else {
+                        // 用户点了取消 → 直接退出
+                        console.log("❌ 用户取消纳入");
+                        return;
+                    }
+                });
+                return;
+            }
+
+            // ==============================================
+            // 不是同一天 → 直接执行，不弹窗
+            // ==============================================
+            doAddTotal();
 
 
-                            BetPanelData.total += BetPanelData.currentTotal;
-                            console.log("✅ 纳入成功 → 本次:", BetPanelData.currentTotal, "累计:", BetPanelData.total);
-                            calcTableResult()
-                            //document.getElementById("clearAllYCBtn").click();
+            // ==============================================
+            // 【封装执行函数】统一写入逻辑
+            // ==============================================
+            function doAddTotal() {
+                try {
+                    // 更新最后纳入时间
+                    let now = new Date();
+                    BetPanelData.lastAddTotalTime = now.toLocaleString();
+                    document.getElementById("lastAddTime").textContent = BetPanelData.lastAddTotalTime;
 
-                            localStorage.setItem("BetPanelData", JSON.stringify(BetPanelData));
-                        }
-                    });
-                    return; // 先暂停，等待弹窗结果
+                    // 累加总数
+                    BetPanelData.total += BetPanelData.currentTotal;
+                    console.log("✅ 纳入成功 → 本次:", BetPanelData.currentTotal, "累计:", BetPanelData.total);
+
+                    // 重新计算表格
+                    calcTableResult();
+                    BetPanelData.TotalBuffer += BetPanelData.yingli;
+                    BetPanelData.TotalProfit += BetPanelData.TotalBuffer;
+                    FrsshbottompourUI();
+                    // 保存到本地
+                    localStorage.setItem("BetPanelData", JSON.stringify(BetPanelData));
+                } catch (e) {
+                    console.log("❌ 纳入失败：", e);
                 }
             }
 
-
+            
 
            
         });
