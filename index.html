@@ -38,15 +38,29 @@
             padding: 10px;
         }
 
-        /* 右侧区域 */
+        /* 右侧区域 —— 最外层，不滚动，包含表格+底部文字 */
         .rightArea {
-            flex: 1; /* 自动填充剩余 */
+            flex: 1;
             display: flex;
-            flex-direction: column;
-            max-width: 550px;
-            max-height: 600px;
-            overflow-y: auto;
+            flex-direction: column; /* 上下排列 */
+            max-width: 530px;
+            max-height: 745px;
             padding: 10px;
+            /* 这里一定不要 overflow-y: auto！！！ */
+        }
+
+        /* 表格容器：单独滚动 */
+        .tableWrap {
+            flex: 1; /* 占满上方空间 */
+            overflow-y: auto; /* 表格自己滚动 */
+            margin-bottom: 10px;
+        }
+
+        /* 底部文字：永远固定显示在最下面 */
+        .bottomText {
+            flex: 0 0 auto;
+            font-size: 16px;
+            padding: 5px 0;
         }
 
         /* 阈值容器 */
@@ -217,6 +231,91 @@
             grid-template-rows: repeat(3, 1fr);
             border: 2px solid #333;
         }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        th, td {
+            border: 1px solid #666;
+            padding: 3px 4px;
+            text-align: center;
+        }
+        th {
+            background: #f0f0f0;
+        }
+        input {
+            width: 100%;
+            border: none;
+            text-align: center;
+            background: transparent;
+            outline: none;
+        }
+
+        /*弹窗*/
+        .highlight {
+            background-color: #90ee90 !important; /* 绿色高亮 */
+            font-weight: bold;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%; /* 👈 必须加这个，否则弹不出 */
+            background: rgba(0,0,0,0.5);
+            justify-content: flex-start;
+            align-items: flex-start;
+            padding-left: 20px;
+            padding-top: 150px;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        .modal-content {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 95%;
+            width: 320px;
+            min-width: 180px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .modal-buttons {
+            margin-top: 15px;
+        }
+
+            .modal-buttons button {
+                margin: 5px;
+                padding: 10px 18px;
+                font-size: 16px;
+                border-radius: 6px;
+            }
+
+        #resultTable input {
+            width: 45px; /* 宽度变大 */
+            height: 32px; /* 高度变高 */
+            text-align: center; /* 文字居中 */
+            font-size: 13px; /* 字体大小 */
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+
+        #resultTable {
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+            #resultTable th, #resultTable td {
+                padding: 2px 5px;
+                text-align: center;
+                border: 1px solid #ddd;
+            }
     </style>
 </head>
 
@@ -224,7 +323,6 @@
 
     <!-- 顶部按钮和加载提示 -->
     <div class="top">
-
         <div class="leftArea">
             <div class="thresholdBox">
                 <button id="btn">获取开奖</button>
@@ -232,7 +330,6 @@
                     <div class="spinner"></div>
                     <span>正在获取开奖数据...</span>
                 </div>
-
             </div>
 
         </div>
@@ -339,8 +436,6 @@
                         <div class="cell valuequad rightquad">45%</div>
                     </div>
                 </div>
-
-
                 <div class="group" style="--cols: 2;">
                     <div class="head-box" data-calc="calcHead">
                         <div class="cell">0头</div>
@@ -420,23 +515,300 @@
         </div>
 
         <!-- 右边区域 -->
+
         <div class="rightArea">
-            <div id="debugBox"></div>
-            <table id="sortTable" border="1" style="width:100%; border-collapse:collapse; text-align:center;">
-                <thead>
-                    <tr>
-                        <th>日期</th>
-                        <th>期数</th>
-                        <th>号码</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+
+            <!-- 表格：可滚动区域 -->
+            <div class="tableWrap">
+                <table id="sortTable" border="1" style="width:100%; border-collapse:collapse; text-align:center;">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>期数</th>
+                            <th>号码</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="bottomText">
+                <style>
+                    /* 🔥 强制宽度 520px，跟表格完全对齐 */
+                    .bet-all {
+                        width: 520px !important;
+                        max-width: 520px !important;
+                        flex-shrink: 0 !important;
+                    }
+                    /* 三个卡片布局 */
+                    .bet-container {
+                        display: flex;
+                        gap: 8px;
+                        font-size: 12px;
+                        margin-bottom: 10px;
+                        width: 100%;
+                    }
+
+                    .bet-col {
+                        flex: 1;
+                        border: 1px solid #333;
+                        padding: 6px;
+                        border-radius: 3px;
+                        box-sizing: border-box;
+                        background: #fff;
+                    }
+
+                    .xinAo {
+                        background: #e6f9e6;
+                    }
+
+                    .laoAo {
+                        background: #e6f3ff;
+                    }
+
+                    .xiangGang {
+                        background: #ffe6e6;
+                    }
+
+                    .bet-title {
+                        font-weight: bold;
+                        text-align: center;
+                        margin-bottom: 4px;
+                    }
+
+                    .bet-row {
+                        display: flex;
+                        justify-content: space-between;
+                        margin-bottom: 2px;
+                    }
+
+                    .bet-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                    }
+
+                        .bet-item span {
+                            white-space: nowrap;
+                            width: auto;
+                        }
+
+                        .bet-item input {
+                            width: 20px;
+                            height: 16px;
+                            text-align: center;
+                            border: 1px solid #888;
+                            font-size: 12px;
+                        }
+
+                    /* 统计行 */
+                    .stat-row {
+                        display: flex;
+                        gap: 8px;
+                        align-items: flex-end;
+                        width: 100%;
+                    }
+
+                    .stat-item {
+                        flex: 1;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 4px;
+                        font-weight: bold;
+                        font-size: 13px;
+                    }
+
+                        .stat-item input {
+                            width: 100%;
+                            height: 26px;
+                            text-align: center;
+                            border: 1px solid #444;
+                            border-radius: 4px;
+                            box-sizing: border-box;
+                            font-size: 14px;
+                        }
+
+                    .stat-btn {
+                        width: 50px;
+                        height: 50px;
+                        background: #1890ff;
+                        color: #fff;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    }
+                </style>
+
+                <!-- 🔥 最外层统一宽度 520px -->
+                <div class="bet-all">
+                    <!-- 三个卡片组 -->
+                    <div class="bet-container">
+                        <div class="bet-col xinAo">
+                            <div class="bet-title">新澳</div>
+                            <div class="bet-row"><div class="bet-item"><span>大</span><input type="text"></div><div class="bet-item"><span>小</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>单</span><input type="text"></div><div class="bet-item"><span>双</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>家禽</span><input type="text"></div><div class="bet-item"><span>野兽</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>红波</span><input type="text"></div><div class="bet-item"><span>绿波</span><input type="text"></div><div class="bet-item"><span>蓝波</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>合大</span><input type="text"></div><div class="bet-item"><span>合小</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>合单</span><input type="text"></div><div class="bet-item"><span>合双</span><input type="text"></div></div>
+                        </div>
+
+                        <div class="bet-col laoAo">
+                            <div class="bet-title">老澳</div>
+                            <div class="bet-row"><div class="bet-item"><span>大</span><input type="text"></div><div class="bet-item"><span>小</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>单</span><input type="text"></div><div class="bet-item"><span>双</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>家禽</span><input type="text"></div><div class="bet-item"><span>野兽</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>红波</span><input type="text"></div><div class="bet-item"><span>绿波</span><input type="text"></div><div class="bet-item"><span>蓝波</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>合大</span><input type="text"></div><div class="bet-item"><span>合小</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>合单</span><input type="text"></div><div class="bet-item"><span>合双</span><input type="text"></div></div>
+                        </div>
+
+                        <div class="bet-col xiangGang">
+                            <div class="bet-title">香港</div>
+                            <div class="bet-row"><div class="bet-item"><span>大</span><input type="text"></div><div class="bet-item"><span>小</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>单</span><input type="text"></div><div class="bet-item"><span>双</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>家禽</span><input type="text"></div><div class="bet-item"><span>野兽</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>红波</span><input type="text"></div><div class="bet-item"><span>绿波</span><input type="text"></div><div class="bet-item"><span>蓝波</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>合大</span><input type="text"></div><div class="bet-item"><span>合小</span><input type="text"></div></div>
+                            <div class="bet-row"><div class="bet-item"><span>合单</span><input type="text"></div><div class="bet-item"><span>合双</span><input type="text"></div></div>
+                        </div>
+                    </div>
+
+                    <!-- 统计栏 + 纳入总数按钮 -->
+                    <div class="stat-row">
+                        <div class="stat-item">
+                            <span>总下总数</span>
+                            <input type="text" id="AllpourZhong">
+                        </div>
+                        <div class="stat-item">
+                            <span>本次总数</span>
+                            <input type="text" readonly id="BenCIpourZhong">
+                        </div>
+                        <div class="stat-item">
+                            <span>点水</span>
+                            <input type="text" readonly id="BenCIPoint">
+                        </div>
+                        <div class="stat-item">
+                            <span>中</span>
+                            <input type="text" id="benCiZhong">
+                        </div>
+                        <div class="stat-item">
+                            <span>盈利</span>
+                            <input type="text" id="benCiYingLi" readonly>
+                        </div>
+
+                        <button class="stat-btn" id="addTotalYCBtn">纳入总数</button>
+                        <button class="stat-btn" id="clearAllYCBtn">清空所有</button>
+                        <button class="stat-btn" id="exportBetData">导出</button>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-item">
+                            <span>总盈利</span>
+                            <input type="text" id="TotalProfit">
+                        </div>
+                        <div class="stat-item">
+                            <span>缓存</span>
+                            <input type="text" id="TotalBuffer">
+                        </div>
+                        <div style="margin-top:8px; font-size:14px; color:#666">
+                            上次纳入总数时间：<span id="lastAddTime">未纳入</span>
+                        </div>
+                    </div>
+                    
+
+
+
+
+                </div>
+            </div>
 
         </div>
 
     </div>
-  
+    <div class="container">
+
+        <!-- 左边区域 -->
+        <div class="leftArea">
+            <div id="debugBox"></div>
+        </div>
+        <div class="rightArea">
+
+            <table id="resultTable">
+                <thead>
+                    <tr>
+                        <th>操作</th>
+                        <th>奖池</th>
+                        <th>大小</th>
+                        <th>单双</th>
+                        <th>合数大小</th>
+                        <th>合数单双</th>
+                        <th>家禽野兽</th>
+                        <th>红绿蓝波</th>
+                        <th>总计</th> <!-- 新增 -->
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><button onclick="clearRegion('新澳')">清空新澳</button></td>
+                        <td>新澳</td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td> <!-- 总计 -->
+                    </tr>
+                    <tr>
+                        <td><button onclick="clearRegion('老澳')">清空老澳</button></td>
+                        <td>老澳</td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td> <!-- 总计 -->
+                    </tr>
+                    <tr>
+                        <td><button onclick="clearRegion('香港')">清空香港</button></td>
+                        <td>香港</td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td> <!-- 总计 -->
+                    </tr>
+                    <tr>
+                        <td><button onclick="clearRegion('所有')">清空所有</button></td>
+                        <td>总数</td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td>
+                        <td><input value="0" readonly></td> <!-- 总计 -->
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- 确认弹窗 -->
+    <div id="customConfirm" class="modal">
+        <div class="modal-content">
+            <p id="confirmText"></p>
+            <div class="modal-buttons">
+                <button id="confirmOk">确定</button>
+                <button id="confirmCancel">取消</button>
+            </div>
+        </div>
+    </div>
+
+
     <script>
 
         const record = {
@@ -476,8 +848,8 @@
         };
         const Years = [2026, 2025, 2024, 2023];
         const 红波 = [1, 2, 7, 8, 12, 13, 18, 19, 23, 24, 29, 30, 34, 35, 40, 45, 46];
-        const 蓝波 = [3, 4, 9, 10, 14, 15, 20, 25, 26, 31, 36, 37, 41, 42, 47, 48];
         const 绿波 = [5, 6, 11, 16, 17, 21, 22, 27, 28, 32, 33, 38, 39, 43, 44, 49];
+        const 蓝波 = [3, 4, 9, 10, 14, 15, 20, 25, 26, 31, 36, 37, 41, 42, 47, 48];
         //const 合数单 = [
         //    1, 3, 5, 7, 9, 10, 12, 14, 16, 18,
         //    21, 23, 25, 27, 29, 30, 32, 34, 36, 38,
@@ -539,7 +911,35 @@
             }
         }
 
-
+  
+        let BetPanelData = {
+            xinao: [],
+            laoa: [],
+            xianggang: [],
+            total: 0,
+            currentTotal: 0,
+            point: 0,
+            zhong: 0,
+            yingli: 0,
+            lastAddTotalTime: "",
+            TotalProfit: 0,
+            TotalBuffer:0,
+            // 正确写法 ✅ 表格数据：大小、单双、合数大小、合数单双、家禽野兽、红绿蓝波
+            historyPanelData: {
+                "新澳": [0, 0, 0, 0, 0, 0],
+                "老澳": [0, 0, 0, 0, 0, 0],
+                "香港": [0, 0, 0, 0, 0, 0],
+                "总数": [0, 0, 0, 0, 0, 0]
+            }
+        };
+        // 计算系数（你给的公式）
+        const M = {
+            da: 25, xiao: 24,
+            dan: 25, shuang: 24,
+            jiaqin: 25, yeshou: 24,
+            hongbo: 17, lvbo: 16, lanbo: 16,
+            heda: 25, hexiao: 24, hedan: 25, heshuang: 24
+        };
         function initYearSelect() {
             const select = document.getElementById("yearSelect");
             select.innerHTML = "";
@@ -556,10 +956,7 @@
         document.getElementById("yearSelect").addEventListener("change", function () {
             const index = Years.indexOf(parseInt(this.value));
             CurrentYear = index;
-            renderTable()
-
-            FreshUIHistroypanel();
-
+            refreshUI();
         });
         function InitApp() {
             initYearSelect();
@@ -583,22 +980,19 @@
         // 切换模式按钮事件
         btnNewao.onclick = () => {
             CurrentMode = FuncMode.Newao;
-            renderTable();
-            FreshUIHistroypanel();
+            refreshUI();
             highlightButton(btnNewao);
 
         };
         btnOldao.onclick = () => {
             CurrentMode = FuncMode.Oldao;
-            renderTable();
-            FreshUIHistroypanel();
+            refreshUI();
             highlightButton(btnOldao);
 
         };
         btnXianggang.onclick = () => {
             CurrentMode = FuncMode.Xianggang;
-            renderTable();
-            FreshUIHistroypanel();
+            refreshUI();
             highlightButton(btnXianggang);
 
         };
@@ -613,33 +1007,94 @@
             btnPingNum.style.backgroundColor = "";
             btnTeNum.style.backgroundColor = "lightblue";
             CurrentTongJi = FuncTongJi.Te;
-            FreshUIHistroypanel();
+            refreshUI();
 
         };
         btnPingNum.onclick = () => {
             btnTeNum.style.backgroundColor = "";
             btnPingNum.style.backgroundColor = "lightblue";
             CurrentTongJi = FuncTongJi.Ping;
-            FreshUIHistroypanel();
+            refreshUI();
 
         };
+        function showCategories() {
 
+            const data = {
+                红波,
+                绿波,
+                蓝波,
+                //合数单,
+                //合数双,
+                野兽: Array.from(野兽),
+                家禽: Array.from(家禽),
+                金: Array.from(金),
+                木: Array.from(木),
+                水: Array.from(水),
+                火: Array.from(火),
+                土: Array.from(土)
+            };
+
+            let html = "";
+
+            for (let key in data) {
+                // 这里改小了字体、缩小了间距
+                html += `
+                         <div style="margin-bottom:10px; font-size:13px;">
+                             <b>${key}：</b>
+                             <span>${data[key].join(", ")}</span>
+                         </div>
+                     `;
+            }
+
+            document.getElementById("debugBox").innerHTML = html;
+        }
+        showCategories();
+
+
+        //更新按键  相关函数
+        async function loadHistoryToModule(g, y) {
+            let realUrl = `https://kj.9bkj.com:1888/kj?g=${g}&y=${y}&t=${Date.now()}`;
+            let url = "https://corsproxy.io/" + realUrl;
+
+            let res = await fetch(url);
+            let json = await res.json();
+
+            let module = new ValueModuleHistroy();
+            module.Year = y;
+
+            fillHistory(module, json.data);
+
+            return module;
+        }
+        //加入参数中
+        function fillHistory(module, apiData) {
+            apiData.forEach(item => {
+                if (!item.num) return;
+
+                // 👉 拆分号码
+                let arr = item.num.split(",").map(n => parseInt(n));
+
+                let nums = arr.slice(0, 6); // 前6个
+                let te = arr[6];            // 特码
+
+                module.addRecord(
+                    parseInt(item.qishu),
+                    item.date,
+                    nums,
+                    te
+                );
+            });
+
+            // 👉 按期数排序
+            module.records.sort((a, b) => a.issue - b.issue);
+        }
+        //按下更新按键 循环获取并填充 然后赋值给参数
         document.getElementById("btnUpdataHistroy").onclick = async () => {
             loadingHistroy.style.display = "flex";
-            //const yearValue = Years[CurrentYear];
-
-            //switch (CurrentMode) {
-            //    case FuncMode.Newao: Histroymodule[CurrentMode][CurrentYear] = await loadHistoryToModule("am", yearValue); break;
-            //    case FuncMode.Oldao: Histroymodule[CurrentMode][CurrentYear] = await loadHistoryToModule("oldam", yearValue); break;
-            //    case FuncMode.Xianggang: Histroymodule[CurrentMode][CurrentYear] = await loadHistoryToModule("xg", yearValue); break;
-            //}
             let tasks = [];
-
             for (let mode = 0; mode < FuncMode.FuncModeCNT; mode++) {
                 for (let y = 0; y < Years.length; y++) {
-
                     const g = ModeToG[mode];
-
                     tasks.push(
                         loadHistoryToModule(g, Years[y]).then(module => {
                             return { mode, y, module };
@@ -663,43 +1118,14 @@
             console.log(Histroymodule);
             saveHistory();
             loadingHistroy.style.display = "none";
-            FreshUIHistroypanel();
+            refreshUI();
+
         };
-        function fillHistory(module, apiData) {
-            apiData.forEach(item => {
-                if (!item.num) return;
 
-                // 👉 拆分号码
-                let arr = item.num.split(",").map(n => parseInt(n));
 
-                let nums = arr.slice(0, 6); // 前6个
-                let te = arr[6];            // 特码
 
-                module.addRecord(
-                    parseInt(item.qishu),
-                    item.date,
-                    nums,
-                    te
-                );
-            });
 
-            // 👉 按期数排序
-            module.records.sort((a, b) => a.issue - b.issue);
-        }
-        async function loadHistoryToModule(g, y) {
-            let realUrl = `https://kj.9bkj.com:1888/kj?g=${g}&y=${y}&t=${Date.now()}`;
-            let url = "https://corsproxy.io/" + realUrl;
-
-            let res = await fetch(url);
-            let json = await res.json();
-
-            let module = new ValueModuleHistroy();
-            module.Year = y;
-
-            fillHistory(module, json.data);
-
-            return module;
-        }
+        //获取波数
         function getColor(num) {
             num = parseInt(num);
             if (红波.includes(num)) return "red";
@@ -707,10 +1133,14 @@
             if (绿波.includes(num)) return "green";
             return "";
         }
-
+        //获取动物小标
         function getAnimal(num) {
             return animals[(num - 1) % 12];
         }
+
+
+
+        //开奖界面显示函数
         function fillRow(prefix, nums, te) {
 
             for (let i = 0; i < 6; i++) {
@@ -734,6 +1164,7 @@
             teBox.className = "num " + getColor(te);
 
         }
+        //开奖界面期数
         function setInfo(prefix, json) {
 
             let qi = document.getElementById("qi_" + prefix);
@@ -749,12 +1180,15 @@
 
             time.innerText = `${year}-${month}-${day} ${cleanTime} ${json.Week}`;
         }
+        //按下开奖
         window.addEventListener("DOMContentLoaded", () => {
 
             document.getElementById("btn").onclick = async () => {
-
                 loading.style.display = "flex";
-
+                // 1. 先清空所有高亮
+                document.querySelectorAll('.bet-item input').forEach(inp => {
+                    inp.style.background = '';
+                });
                 let tasks = Object.keys(sources).map(async (name) => {
 
                     try {
@@ -797,6 +1231,7 @@
                 });
                 await Promise.all(tasks);
 
+                calcWinAndProfit()
                 loading.style.display = "none";
             };
 
@@ -804,6 +1239,7 @@
         function isExist(records, issue) {
             return records.some(item => item.issue === issue);
         }
+        //写入历史中
         function addRecord(module, mode, year, data) {
 
             // 初始化
@@ -823,6 +1259,7 @@
 
             console.log("写入成功:", data.issue);
         }
+        //获取当天时间
         function getToday() {
             const now = new Date();
 
@@ -832,8 +1269,21 @@
 
             return `${year}-${month}-${day}`;
         }
+        //添加进历史表格中
         function addToTable(name, json, nums, te) {
 
+            // ================================
+            // 🔥 新增：判断 te 是否 1-49
+            // ================================
+            const teNum = Number(te);
+            if (isNaN(teNum) || teNum < 1 || teNum > 49) {
+                console.warn("❌ TE 不符合 1-49，取消添加：", te);
+                return; // 不满足直接退出，不往下执行
+            }
+
+            // ================================
+            // 下面是你原来的所有代码（完全不动）
+            // ================================
             let year = json.Year;
             let month = String(json.Moon).padStart(2, "0");
             let day = String(json.Day).padStart(2, "0");
@@ -870,7 +1320,9 @@
             if (!Histroymodule[tmpemode][0]) {
                 Histroymodule[tmpemode][0] = { records: [] };
             }
+            // 最后加这一行
 
+            highlightBetInput(name, te);
             const records = Histroymodule[tmpemode][0].records;
             console.log(name, year);
             // ===== ③ 去重（关键）=====
@@ -896,7 +1348,67 @@
             localStorage.setItem("Histroymodule", JSON.stringify(Histroymodule));
             console.log("数据已经自动保存");
         }
+        // ================================
+        // 🔥 自动判断 te 类型 + 高亮对应输入框
+        // ================================
 
+        function highlightBetInput(name, teNum) {
+            // 2. 拿到 当前 新澳/老澳/香港 的 13 个输入框
+            let inputList = [];
+            const all = document.querySelectorAll('.bet-item input');
+
+            if (name === '新澳') inputList = Array.from(all).slice(0, 13);
+            if (name === '老澳') inputList = Array.from(all).slice(13, 26);
+            if (name === '香港') inputList = Array.from(all).slice(26, 39);
+
+            if (inputList.length === 0) return;
+
+            // 3. 定义顺序（和你界面完全一致）
+            const labels = [
+                '大', '小', '单', '双', '家禽', '野兽',
+                '红波', '绿波', '蓝波', '合大', '合小', '合单', '合双'
+            ];
+
+            // 4. 判断逻辑（你现成的变量直接用）
+            const res = {
+                大: teNum >= 25 && teNum <= 49,
+                小: teNum >= 1 && teNum <= 24,
+                单: teNum % 2 === 1,
+                双: teNum % 2 === 0,
+                // 直接换成 👇（用你现成的 getColor！）
+                红波: getColor(teNum) === "red",
+                绿波: getColor(teNum) === "green",
+                蓝波: getColor(teNum) === "blue",
+            };
+
+            // 合数
+            const s = Math.floor(teNum / 10) + (teNum % 10);
+            res.合大 = s > 6;
+            res.合小 = s <= 6;
+            res.合单 = s % 2 === 1;
+            res.合双 = s % 2 === 0;
+
+            // 家禽野兽
+            const animal = getAnimal(teNum);
+            res.家禽 = 家禽.has(animal);
+            res.野兽 = 野兽.has(animal);
+
+            // 5. 遍历 → 高亮 + 打印
+
+            for (let i = 0; i < 13; i++) {
+                const label = labels[i];
+                const hit = res[label];
+                if (hit) {
+                    // 把高亮那行改成淡黄色
+                    inputList[i].style.background = "#ffecb3";
+                    // 把高亮那行改成淡黄色
+
+                    //                   inputList[i].style.background = "#fff9cc";
+                }
+            }
+
+        }
+        //显示表格
         function renderTable() {
 
             let tbody = document.querySelector("#sortTable tbody");
@@ -918,13 +1430,13 @@
 
                 function buildNum(n) {
                     return `
-                            <span class="num ${getColor(n)}"
-                                  style="padding:3px 6px; margin:1px; display:inline-block;">
-                                ${String(n).padStart(2, "0")}
-                                <div style="font-size:11px;">
-                                    ${getAnimal(n)}
-                                </div>
-                            </span>`;
+                        <span class="num ${getColor(n)}"
+                                style="padding:3px 6px; margin:1px; display:inline-block;">
+                            ${String(n).padStart(2, "0")}
+                            <div style="font-size:11px;">
+                                ${getAnimal(n)}
+                            </div>
+                        </span>`;
                 }
 
                 let numbersHtml = "";
@@ -940,102 +1452,114 @@
                 let tr = document.createElement("tr");
 
                 tr.innerHTML = `
-                        <td>${item.time}</td>
-                        <td>${item.issue}</td>
-                        <td>${numbersHtml}</td>
-                    `;
+                                                    <td>${item.time}</td>
+                                                    <td>${item.issue}</td>
+                                                    <td>${numbersHtml}</td>
+                                                `;
 
                 tbody.appendChild(tr);
             });
         }
+
+
+        // =============================================
+        // 页面加载：恢复历史 + 恢复下注数据
+        // =============================================
         window.addEventListener("DOMContentLoaded", () => {
-
-            // ===== 恢复 Histroymodule =====
+            // ===== 恢复 Histroymodule（你原有代码，不动）=====
             const savedHistory = localStorage.getItem("Histroymodule");
-
             if (savedHistory) {
                 try {
                     const data = JSON.parse(savedHistory);
-
-                    // 如果你 Histroymodule 是数组
-                    if (Array.isArray(data)) {
-                        Histroymodule = data;
-                    }
-                    // 如果是对象结构（推荐）
-                    else {
-                        Histroymodule = data;
-                    }
-
+                    Histroymodule = Array.isArray(data) ? data : data;
                 } catch (e) {
                     console.error("Histroymodule 恢复失败:", e);
                 }
             }
             console.log(Histroymodule);
-            renderTable()
+
             document.getElementById("btn").click();
             document.getElementById("btnTeNum").click();
 
+            // ===== 🔥 恢复下注面板所有数据 =====
+            const savedBetPanel = localStorage.getItem("BetPanelData");
+            if (savedBetPanel) {
+                        
+                try {
+                    BetPanelData = JSON.parse(savedBetPanel);
+                    loadBetDataToInputs();
+
+                } catch (e) {
+                    console.error("BetPanelData 恢复失败", e);
+                }
+            }
+            refreshUI();
         });
+
+        // =============================================
+        // 关闭页面：自动保存所有数据
+        // =============================================
         window.addEventListener("beforeunload", () => {
+            // 保存历史
             try {
-                localStorage.setItem(
-                    "Histroymodule",
-                    JSON.stringify(Histroymodule)
-                );
+                localStorage.setItem("Histroymodule", JSON.stringify(Histroymodule));
             } catch (e) {
                 console.error("保存 Histroymodule 失败:", e);
             }
+
+            // 🔥 保存下注数据
+            collectBetInputs();
+            try {
+                localStorage.setItem("BetPanelData", JSON.stringify(BetPanelData));
+            } catch (e) { }
         });
 
+        // =============================================
+        // 历史记录防抖保存（不动）
+        // =============================================
         let historySaveTimer;
-
         function saveHistory() {
             clearTimeout(historySaveTimer);
-
             historySaveTimer = setTimeout(() => {
                 try {
-                    localStorage.setItem(
-                        "Histroymodule",
-                        JSON.stringify(Histroymodule)
-                    );
+                    localStorage.setItem("Histroymodule", JSON.stringify(Histroymodule));
                     console.log("Histroymodule 自动保存");
                 } catch (e) {
                     console.error("保存失败:", e);
                 }
             }, 500);
         }
-        function showCategories() {
 
-            const data = {
-                红波,
-                蓝波,
-                绿波,
-                //合数单,
-                //合数双,
-                野兽: Array.from(野兽),
-                家禽: Array.from(家禽),
-                金: Array.from(金),
-                木: Array.from(木),
-                水: Array.from(水),
-                火: Array.from(火),
-                土: Array.from(土)
-            };
-
-            let html = "";
-
-            for (let key in data) {
-
-                html += `
-                <div style="margin-bottom:10px;">
-                    <b>${key}：</b>
-                    <span>${data[key].join(", ")}</span>
-                </div>
-            `;
-            }
-
-            document.getElementById("debugBox").innerHTML = html;
+        // =============================================
+        // 🔥 收集所有输入框值
+        // =============================================
+        function collectBetInputs() {
+            const allInputs = document.querySelectorAll(".bet-item input");
+            BetPanelData.xinao = Array.from(allInputs).slice(0, 13).map(el => el.value.trim());
+            BetPanelData.laoa = Array.from(allInputs).slice(13, 26).map(el => el.value.trim());
+            BetPanelData.xianggang = Array.from(allInputs).slice(26, 39).map(el => el.value.trim());
         }
-        showCategories();
+
+        // =============================================
+        // 🔥 把数据恢复到界面输入框
+        // =============================================
+        function loadBetDataToInputs() {
+            const allInputs = document.querySelectorAll(".bet-item input");
+            const allValues = [
+                ...BetPanelData.xinao,
+                ...BetPanelData.laoa,
+                ...BetPanelData.xianggang
+            ];
+            allInputs.forEach((input, index) => {
+                input.value = allValues[index] || "";
+            });
+
+            document.getElementById("lastAddTime").textContent = BetPanelData.lastAddTotalTime || "未纳入";
+        }
+
+
+
+
         function calcAllbigSmall(records, Flag) {
 
             let big = 0;
@@ -1078,7 +1602,7 @@
 
             for (let item of records) {
                 const data = Flag == 0 ? [item.te] : (item.nums || []);
- 
+
 
                 if (Flag == 0) {
 
@@ -1151,8 +1675,8 @@
 
             const getWave = (v) => {
                 if (红波.includes(v)) return 0;
-                if (蓝波.includes(v)) return 1;
-                if (绿波.includes(v)) return 2;
+                if (绿波.includes(v)) return 1;
+                if (蓝波.includes(v)) return 2;
                 return -1;
             };
 
@@ -1380,29 +1904,563 @@
                 bindBlockAuto(el, result);
             });
         }
+        //统计概率表格
         function FreshUIHistroypanel() {
 
             const records = Histroymodule?.[CurrentMode]?.[CurrentYear]?.records;
             if (!records || records.length === 0) return;
             autoRender(records, CurrentTongJi);
-            //// 大小
-            //renderAny(".quad-box:nth-of-type(1)", calcAllbigSmall(records, CurrentTongJi));
-
-            //// 单双
-            //renderAny(".quad-box:nth-of-type(2)", calcAllOddEven(records, CurrentTongJi));
-
-            //// 合数单双
-            //renderAny(".quad-box:nth-of-type(3)", calcHeOddEven(records, CurrentTongJi));
-
-            //// 头数
-            //renderAny(".head-count", calcHead(records, CurrentTongJi));
-
-            //// 波色
-            //renderAny(".Wave-box", calcWave(records, CurrentTongJi));
-
-            //// 五行
-            //renderAny(".wuxing-box", calcWuXing(records, CurrentTongJi));
         }
+        // 统计显示函数
+
+        // 监听所有输入框，输入完成（离开输入框）就打印消息
+        // =============================================
+        // 🔥 输入完成后自动计算：本次总数 + 点水
+        // =============================================
+        // 监听所有下注框
+        document.querySelectorAll('.bet-item input').forEach(input => {
+            input.addEventListener('blur', function () {
+                collectBetInputs();
+                FrsshbottompourUI();
+                // 先保存
+                saveAllBetData();
+
+            });
+        });
+
+        // 监听统计输入框（总数、中、盈利）
+        document.querySelectorAll('.stat-item input').forEach(input => {
+            input.addEventListener('blur', function () {
+                // 2. 拿到页面上的 总数
+                // 2. 拿到页面上的 总数（改用 ID 精准获取，绝对不乱）
+                const totalInput = document.getElementById("AllpourZhong");
+                const currentTotal = Number(totalInput.value) || 0;
+                BetPanelData.total = currentTotal;
+
+                const TotalProfitInput = document.getElementById("TotalProfit");
+                const currentProfit = Number(TotalProfitInput.value) || 0;
+                BetPanelData.TotalProfit = currentProfit;
+
+                const TotalBufferInput = document.getElementById("TotalBuffer");
+                const currentTotalBuffer = Number(TotalBufferInput.value) || 0;
+                BetPanelData.TotalBuffer = currentTotalBuffer; 
+
+                FrsshbottompourUI();
+                // 先保存
+                saveAllBetData();
+
+            });
+        });
+        // ================================
+        // 保存所有输入框的值到 BetPanelData + localStorage
+        // ================================
+        // ================================
+        // 保存所有数据：下注值 + 总数 total
+        // ================================
+        function saveAllBetData() {
+            // 1. 保存所有下注输入框
+            const inputs = document.querySelectorAll('.bet-item input');
+            const values = Array.from(inputs).map(inp => Number(inp.value) || 0);
+
+            // 2. 拿到页面上的 总数
+            const totalInput = document.querySelectorAll(".stat-item input")[0];
+            const currentTotal = Number(totalInput.value) || 0;
+
+            // 3. 存入 BetPanelData
+            BetPanelData.values = values;
+            BetPanelData.total = currentTotal; // 👈 这里同步保存总数
+
+            // 4. 保存到本地存储
+            // ==============================================
+            // 保存表格 6 列数据到 historyPanelData
+            // ==============================================
+     
+
+            // 一起存本地
+            localStorage.setItem('BetPanelData', JSON.stringify(BetPanelData));
+        }
+        //刷新下注表格
+        function FrsshbottompourUI() {
+            let data = BetPanelData;
+            let panel = data.historyPanelData;
+            collectBetInputs();
+            //计算得到下注当前值和点水
+            calcCurrentTotalAndPoint();
+
+            // 1. 统计栏直接赋值
+            document.getElementById('AllpourZhong').value = data.total || 0;
+            document.getElementById('BenCIpourZhong').value = data.currentTotal || 0;
+            document.getElementById('BenCIPoint').value = Math.floor(data.point) || 0;
+            document.getElementById('benCiZhong').value = data.zhong || 0;
+            document.getElementById('benCiYingLi').value = data.yingli || 0;
+
+            document.getElementById('TotalProfit').value = data.TotalProfit || 0;
+            document.getElementById('TotalBuffer').value = data.TotalBuffer || 0;
+           
+
+            // 2. 上次纳入时间
+            document.getElementById('lastAddTime').textContent = data.lastAddTotalTime || '未纳入';
+
+            try {
+                const table = document.getElementById('resultTable');
+                if (!table) return;
+
+                const rows = table.querySelectorAll('tbody tr');
+                const hp = BetPanelData.historyPanelData;
+                if (!hp || rows.length < 4) return;
+
+                function set(row, data) {
+                    const i = row.querySelectorAll('input');
+                    i[0].value = data[0] ?? 0;
+                    i[1].value = data[1] ?? 0;
+                    i[2].value = data[2] ?? 0;
+                    i[3].value = data[3] ?? 0;
+                    i[4].value = data[4] ?? 0;
+                    i[5].value = data[5] ?? 0;
+
+                    // 自动计算总计（6列相加）
+                    const total = (data[0] || 0) + (data[1] || 0) + (data[2] || 0) + (data[3] || 0) + (data[4] || 0) + (data[5] || 0);
+                    i[6].value = total; // 赋值到总计列
+                }
+
+                set(rows[0], hp.新澳);
+                set(rows[1], hp.老澳);
+                set(rows[2], hp.香港);
+                set(rows[3], hp.总数);
+            } catch (e) { }
+            
+        }
+
+        // 🔥 核心：计算 新澳+老澳+香港 总和
+        function calcCurrentTotalAndPoint() {
+            const inputs = document.querySelectorAll('.bet-item input');
+            let currentTotal = 0;
+            // 新澳 0-12
+            currentTotal += (Number(inputs[0].value) || 0) * M.da;
+            currentTotal += (Number(inputs[1].value) || 0) * M.xiao;
+            currentTotal += (Number(inputs[2].value) || 0) * M.dan;
+            currentTotal += (Number(inputs[3].value) || 0) * M.shuang;
+            currentTotal += (Number(inputs[4].value) || 0) * M.jiaqin;
+            currentTotal += (Number(inputs[5].value) || 0) * M.yeshou;
+            currentTotal += (Number(inputs[6].value) || 0) * M.hongbo;
+            currentTotal += (Number(inputs[7].value) || 0) * M.lvbo;
+            currentTotal += (Number(inputs[8].value) || 0) * M.lanbo;
+            currentTotal += (Number(inputs[9].value) || 0) * M.heda;
+            currentTotal += (Number(inputs[10].value) || 0) * M.hexiao;
+            currentTotal += (Number(inputs[11].value) || 0) * M.hedan;
+            currentTotal += (Number(inputs[12].value) || 0) * M.heshuang;
+
+            // 老澳 13-25
+            currentTotal += (Number(inputs[13].value) || 0) * M.da;
+            currentTotal += (Number(inputs[14].value) || 0) * M.xiao;
+            currentTotal += (Number(inputs[15].value) || 0) * M.dan;
+            currentTotal += (Number(inputs[16].value) || 0) * M.shuang;
+            currentTotal += (Number(inputs[17].value) || 0) * M.jiaqin;
+            currentTotal += (Number(inputs[18].value) || 0) * M.yeshou;
+            currentTotal += (Number(inputs[19].value) || 0) * M.hongbo;
+            currentTotal += (Number(inputs[20].value) || 0) * M.lvbo;
+            currentTotal += (Number(inputs[21].value) || 0) * M.lanbo;
+            currentTotal += (Number(inputs[22].value) || 0) * M.heda;
+            currentTotal += (Number(inputs[23].value) || 0) * M.hexiao;
+            currentTotal += (Number(inputs[24].value) || 0) * M.hedan;
+            currentTotal += (Number(inputs[25].value) || 0) * M.heshuang;
+
+            // 香港 26-38
+            currentTotal += (Number(inputs[26].value) || 0) * M.da;
+            currentTotal += (Number(inputs[27].value) || 0) * M.xiao;
+            currentTotal += (Number(inputs[28].value) || 0) * M.dan;
+            currentTotal += (Number(inputs[29].value) || 0) * M.shuang;
+            currentTotal += (Number(inputs[30].value) || 0) * M.jiaqin;
+            currentTotal += (Number(inputs[31].value) || 0) * M.yeshou;
+            currentTotal += (Number(inputs[32].value) || 0) * M.hongbo;
+            currentTotal += (Number(inputs[33].value) || 0) * M.lvbo;
+            currentTotal += (Number(inputs[34].value) || 0) * M.lanbo;
+            currentTotal += (Number(inputs[35].value) || 0) * M.heda;
+            currentTotal += (Number(inputs[36].value) || 0) * M.hexiao;
+            currentTotal += (Number(inputs[37].value) || 0) * M.hedan;
+            currentTotal += (Number(inputs[38].value) || 0) * M.heshuang;
+            // 点水（你可以自己改公式）
+            const point = currentTotal * 0.04; // 示例 2% 点水
+            // 存起来
+            BetPanelData.currentTotal = currentTotal;
+            BetPanelData.point = parseInt(point);
+
+
+
+            // 立即执行一次
+            calcWinAndProfit();
+        }
+
+        // ================================
+        // 🔥 独立计算：中 + 盈利（三个地区 te 一起算）
+        // ================================
+        function calcWinAndProfit() {
+            // 三个地区全部取出来
+            const modes = [FuncMode.Newao, FuncMode.Oldao, FuncMode.Xianggang];
+            let allHitValues = 0;
+            // 标签顺序（必须和界面一致）
+            const labels = [
+                '大', '小', '单', '双', '家禽', '野兽',
+                '红波', '绿波', '蓝波', '合大', '合小', '合单', '合双'
+            ];
+            const inputs = document.querySelectorAll('.bet-item input');
+
+            // 遍历 新澳/老澳/香港
+            for (let mode of modes) {
+                const recordList = Histroymodule[mode]?.[0]?.records;
+                if (!recordList) continue;
+
+                const teNum = Number(recordList[recordList.length - 1]?.te);
+
+                if (isNaN(teNum)) continue;
+
+                // 判断当前 te 命中哪些类型
+                const res = {
+                    大: teNum >= 25 && teNum <= 49,
+                    小: teNum >= 1 && teNum <= 24,
+                    单: teNum % 2 === 1,
+                    双: teNum % 2 === 0,
+                    红波: getColor(teNum) === "red",
+                    绿波: getColor(teNum) === "green",
+                    蓝波: getColor(teNum) === "blue",
+                };
+                const s = Math.floor(teNum / 10) + (teNum % 10);
+                res.合大 = s > 6;
+                res.合小 = s <= 6;
+                res.合单 = s % 2 === 1;
+                res.合双 = s % 2 === 0;
+                const animal = getAnimal(teNum);
+                res.家禽 = 家禽.has(animal);
+                res.野兽 = 野兽.has(animal);
+
+                // 累加这个地区命中的金额
+                let start = mode * 13;
+                for (let i = 0; i < 13; i++) {
+                    const idx = start + i;
+                    if (res[labels[i]]) {
+                        allHitValues += Number(inputs[idx]?.value) || 0;
+                    }
+                }
+            }
+            const total = BetPanelData.currentTotal || 0;
+            BetPanelData.zhong = allHitValues;
+            BetPanelData.yingli = allHitValues * 47 - total + BetPanelData.point;
+
+
+        }
+        // 清空对应区域表格数据
+        function clearRegion(region) {
+            if (!BetPanelData?.historyPanelData) return;
+
+            // 清空对应区域
+            if (region === "所有") {
+                BetPanelData.historyPanelData.新澳 = [0, 0, 0, 0, 0, 0];
+                BetPanelData.historyPanelData.老澳 = [0, 0, 0, 0, 0, 0];
+                BetPanelData.historyPanelData.香港 = [0, 0, 0, 0, 0, 0];
+                BetPanelData.historyPanelData.总数 = [0, 0, 0, 0, 0, 0];
+            } else {
+                BetPanelData.historyPanelData[region] = [0, 0, 0, 0, 0, 0];
+                // 重新计算总数行
+                calcTotalRow();
+            }
+
+            // 刷新显示
+            FrsshbottompourUI();
+            saveAllBetData(); // 保存
+        }
+
+        // 重新计算总数行
+        function calcTotalRow() {
+            let hp = BetPanelData.historyPanelData;
+            for (let c = 0; c < 6; c++) {
+                hp.总数[c] = hp.新澳[c] + hp.老澳[c] + hp.香港[c];
+            }
+        }
+        function calcTableResult() {
+            const modes = [FuncMode.Newao, FuncMode.Oldao, FuncMode.Xianggang];
+            const labels = [
+                '大', '小', '单', '双', '家禽', '野兽',
+                '红波', '绿波', '蓝波', '合大', '合小', '合单', '合双'
+            ];
+            const inputs = document.querySelectorAll('.bet-item input');
+
+        
+            // 标签 → 系数
+            const labelToMulti = {
+                '大': 'da', '小': 'xiao',
+                '单': 'dan', '双': 'shuang',
+                '家禽': 'jiaqin', '野兽': 'yeshou',
+                '红波': 'hongbo', '绿波': 'lvbo', '蓝波': 'lanbo',
+                '合大': 'heda', '合小': 'hexiao',
+                '合单': 'hedan', '合双': 'heshuang'
+            };
+
+            // 标签 → 表格列
+            const labelToCol = {
+                '大': 0, '小': 0,
+                '单': 1, '双': 1,
+                '合大': 2, '合小': 2,
+                '合单': 3, '合双': 3,
+                '家禽': 4, '野兽': 4,
+                '红波': 5, '绿波': 5, '蓝波': 5
+            };
+
+            if (!BetPanelData.historyPanelData) {
+                BetPanelData.historyPanelData = {
+                    新澳: [0, 0, 0, 0, 0, 0],
+                    老澳: [0, 0, 0, 0, 0, 0],
+                    香港: [0, 0, 0, 0, 0, 0],
+                    总数: [0, 0, 0, 0, 0, 0]
+                };
+            }
+
+            let hp = BetPanelData.historyPanelData;
+     
+
+            // ======================================
+            // 你的原版开奖逻辑（完全不动）
+            // ======================================
+            for (let mode of modes) {
+                const recordList = Histroymodule[mode]?.[0]?.records;
+                if (!recordList) continue;
+
+                const teNum = Number(recordList[recordList.length - 1]?.te);
+                if (isNaN(teNum)) continue;
+
+                const res = {
+                    大: teNum >= 25 && teNum <= 49,
+                    小: teNum >= 1 && teNum <= 24,
+                    单: teNum % 2 === 1,
+                    双: teNum % 2 === 0,
+                    红波: getColor(teNum) === "red",
+                    绿波: getColor(teNum) === "green",
+                    蓝波: getColor(teNum) === "blue",
+                };
+                const s = Math.floor(teNum / 10) + (teNum % 10);
+                res.合大 = s > 6;
+                res.合小 = s <= 6;
+                res.合单 = s % 2 === 1;
+                res.合双 = s % 2 === 0;
+                const animal = getAnimal(teNum);
+                res.家禽 = 家禽.has(animal);
+                res.野兽 = 野兽.has(animal);
+
+                const region = ["新澳", "老澳", "香港"][mode];
+                const start = mode * 13;
+
+                // ======================================
+                // ✅ 核心：中不中都 × 系数
+                // ======================================
+                for (let i = 0; i < 13; i++) {
+                    const idx = start + i;
+                    const money = Number(inputs[idx]?.value) || 0;
+                    if (money === 0) continue;
+
+                    const label = labels[i];
+                    const col = labelToCol[label];
+                    const multi = M[labelToMulti[label]]; // 系数
+
+                    const value = money * multi; // 统一乘系数
+
+                    if (res[label]) {
+                        hp[region][col] += money * (47 - multi);   // 中 +
+                    } else {
+                        hp[region][col] -= money * multi;   // 不中 -
+                    }
+                }
+            }
+            
+            // 合计总数行
+            for (let c = 0; c < 6; c++) {
+                hp.总数[c] = hp.新澳[c] + hp.老澳[c] + hp.香港[c];
+            }
+           
+            FrsshbottompourUI();
+        }
+
+
+
+
+
+        //------------------ 弹窗函数 ------------------
+        // 点击遮罩空白处不关闭
+        function showConfirm(message, callback) {
+            const modal = document.getElementById("customConfirm");
+            const text = document.getElementById("confirmText");
+            const okBtn = document.getElementById("confirmOk");
+            const cancelBtn = document.getElementById("confirmCancel");
+
+            text.textContent = message;
+            modal.style.display = "flex";
+
+            const buttons = [okBtn, cancelBtn];
+            let focusIndex = 0; // 0=确定, 1=取消
+
+            // 🔹 设置焦点高亮
+            function setFocus(index) {
+                focusIndex = index;
+                buttons.forEach((btn, i) => {
+                    btn.classList.toggle("highlight", i === focusIndex);
+                });
+            }
+
+            function cleanup() {
+                modal.style.display = "none";
+                okBtn.removeEventListener("click", onOk);
+                cancelBtn.removeEventListener("click", onCancel);
+                document.removeEventListener("keydown", onKeydown);
+                buttons.forEach(btn => btn.classList.remove("highlight"));
+            }
+
+            function onOk() {
+                cleanup();
+                callback(true);
+            }
+
+            function onCancel() {
+                cleanup();
+                callback(false);
+            }
+
+            function onKeydown(e) {
+                switch (e.code) {
+                    case "ArrowLeft":
+                    case "ArrowRight":
+                        e.preventDefault();
+                        setFocus(focusIndex === 0 ? 1 : 0); // 切换左右焦点
+                        break;
+                    case "Enter":        // 主键盘回车
+                    case "NumpadEnter":  // 数字键盘回车
+                    case "Space":
+                        e.preventDefault();
+                        if (focusIndex === 0) onOk();
+                        else onCancel();
+                        break;
+                    case "Escape":
+                        e.preventDefault();
+                        onCancel();
+                        break;
+                }
+            }
+
+            // 绑定事件
+            okBtn.addEventListener("click", onOk);
+            cancelBtn.addEventListener("click", onCancel);
+            document.addEventListener("keydown", onKeydown);
+
+            // 默认焦点在“确定”
+            setFocus(0);
+        }
+        // =============================================
+        // 🔥 纳入总数按钮逻辑
+        // =============================================
+        document.getElementById("addTotalYCBtn").addEventListener("click", () => {
+
+            let today = new Date().toLocaleDateString(); // 2026/4/12
+            let lastTime = BetPanelData.lastAddTotalTime;
+
+            // 3. 如果有上次时间，并且是同一天 → 弹窗确认
+            // 如果有上次时间，并且是同一天 → 弹出你的自定义弹窗
+            if (lastTime) {
+                let lastDate = new Date(lastTime).toLocaleDateString();
+                if (lastDate === today) {
+                    // 👇 调用你自己写的弹窗！完全不改动你的代码！
+ 
+                    showConfirm("⚠️ 您今天已经纳入过了！是否还要继续纳入？", function (result) {
+                        if (result) {
+                            let now = new Date();
+                            BetPanelData.lastAddTotalTime = now.toLocaleString(); // 完整时间
+
+                            document.getElementById("lastAddTime").textContent = BetPanelData.lastAddTotalTime;
+
+
+                            BetPanelData.total += BetPanelData.currentTotal;
+                            console.log("✅ 纳入成功 → 本次:", BetPanelData.currentTotal, "累计:", BetPanelData.total);
+                            calcTableResult()
+                            //document.getElementById("clearAllYCBtn").click();
+
+                            localStorage.setItem("BetPanelData", JSON.stringify(BetPanelData));
+                        }
+                    });
+                    return; // 先暂停，等待弹窗结果
+                }
+            }
+
+
+
+           
+        });
+
+        // =============================================
+        // 🔥🔥🔥 清空所有输入按钮（新增）
+        // =============================================
+        document.getElementById("clearAllYCBtn").addEventListener("click", () => {
+            // 清空所有输入框
+            document.querySelectorAll(".bet-item input").forEach(input => {
+                input.value = "";
+            });
+
+            // 清空本次统计
+            BetPanelData.currentTotal = 0;
+            BetPanelData.point = 0;
+
+            FrsshbottompourUI();
+            localStorage.setItem("BetPanelData", JSON.stringify(BetPanelData));
+
+        });
+
+        document.getElementById("exportBetData").addEventListener("click", () => {
+            refreshUI();
+            // 2. 开始生成导出文本
+            const betNames = [
+                "大", "小", "单", "双", "家禽", "野兽",
+                "红波", "绿波", "蓝波", "合大", "合小", "合单", "合双"
+            ];
+
+            let text = "";
+            text += "新澳：\n";
+            // ============== 新澳 ==============
+            BetPanelData.xinao.forEach((val, i) => {
+                if (val > 0) {
+                    text += `            ${betNames[i]}各${val}\n`;
+                }
+            });
+            text += "老澳：\n";
+            // ============== 老澳 ==============
+            BetPanelData.laoa.forEach((val, i) => {
+                if (val > 0) {
+                    text += `            ${betNames[i]}各${val}\n`;
+                }
+            });
+            text += "香港：\n";
+            // ============== 香港 ==============
+            BetPanelData.xianggang.forEach((val, i) => {
+                if (val > 0) {
+                    text += `            ${betNames[i]}各${val}\n`;
+                }
+            });
+
+            // ============== 最后加 中 ==============
+
+            text += `总:${BetPanelData.currentTotal}`;
+
+            // ============== 复制到剪贴板 ==============
+            navigator.clipboard.writeText(text).then(() => {
+                alert("导出并复制成功！\n\n" + text);
+            });
+        });
+
+
+        //刷新浏览器所有数据
+        function refreshUI() {
+            //刷新历史记录的表格
+            renderTable();
+            //统计概率的表格
+            FreshUIHistroypanel();
+            //刷新下注
+            FrsshbottompourUI();
+        }
+
     </script>
 </body>
 </html>
