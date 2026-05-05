@@ -43,7 +43,7 @@
             flex: 1;
             display: flex;
             flex-direction: column; /* 上下排列 */
-            max-width: 530px;
+            max-width: 540px;
             max-height: 745px;
             padding: 10px;
             /* 这里一定不要 overflow-y: auto！！！ */
@@ -1054,7 +1054,12 @@
         //更新按键  相关函数
         async function loadHistoryToModule(g, y) {
             let realUrl = `https://kj.9bkj.com:1888/kj?g=${g}&y=${y}&t=${Date.now()}`;
-            let url = "https://corsproxy.io/" + realUrl;
+            let worker = "https://lingering-field-26e2.zuoan1643.workers.dev/";
+
+
+
+            let url = worker + "?url=" + encodeURIComponent(realUrl);
+
 
             let res = await fetch(url);
             let json = await res.json();
@@ -1193,9 +1198,11 @@
 
                     try {
 
-                        let realUrl = sources[name] + "?t=" + Date.now();
-                        let url = "https://corsproxy.io/" + realUrl;
+                        let worker = "https://lingering-field-26e2.zuoan1643.workers.dev/";
 
+                        let realUrl = sources[name] + "?t=" + Date.now();
+
+                        let url = worker + "?url=" + encodeURIComponent(realUrl);
                         let res = await fetch(url);
 
                         if (!res.ok) throw new Error("HTTP " + res.status);
@@ -1648,13 +1655,23 @@
 
                 } else {
 
+                    // 👉 每一期单独统计
+                    let temp = [0, 0, 0, 0, 0];
+
                     for (let v of data) {
 
                         const head = Math.floor(v / 10);
 
-                        if (count[head] !== undefined) {
-                            count[head]++;
-                            total++;
+                        if (temp[head] !== undefined) {
+                            temp[head]++;
+                        }
+                    }
+
+                    // 👉 本期哪些头 ≥2 次
+                    for (let i = 0; i < 5; i++) {
+                        if (temp[i] >= 2) {
+                            count[i]++;
+                            total++;   // ⚠️ 注意：这里按“命中次数”累计
                         }
                     }
                 }
