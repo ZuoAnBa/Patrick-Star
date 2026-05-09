@@ -1054,13 +1054,11 @@
         //更新按键  相关函数
         async function loadHistoryToModule(g, y) {
             let realUrl = `https://kj.9bkj.com:1888/kj?g=${g}&y=${y}&t=${Date.now()}`;
-            let worker = "https://lingering-field-26e2.zuoan1643.workers.dev/";
+            //let worker = "https://lingering-field-26e2.zuoan1643.workers.dev/";
+            //let url = worker + "?url=" + encodeURIComponent(realUrl);
 
-
-
-            let url = worker + "?url=" + encodeURIComponent(realUrl);
-
-
+            let worker = "https://corsproxy.io/";
+            let url = worker + realUrl;
             let res = await fetch(url);
             let json = await res.json();
 
