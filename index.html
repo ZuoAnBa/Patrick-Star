@@ -1198,11 +1198,13 @@
 
                     try {
 
-                        let worker = "https://lingering-field-26e2.zuoan1643.workers.dev/";
-
+                        // let worker = "https://lingering-field-26e2.zuoan1643.workers.dev/";
+                        //let realUrl = sources[name] + "?t=" + Date.now();
+                        let worker = "https://corsproxy.io/";
+                        
                         let realUrl = sources[name] + "?t=" + Date.now();
 
-                        let url = worker + "?url=" + encodeURIComponent(realUrl);
+                        let url = worker + realUrl;
                         let res = await fetch(url);
 
                         if (!res.ok) throw new Error("HTTP " + res.status);
