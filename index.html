@@ -69,6 +69,17 @@
             gap: 5px; /* 水平间距是 5px */
         }
 
+        .versionBadge {
+            margin-left: auto;
+            align-self: center;
+            padding: 3px 7px;
+            border-radius: 10px;
+            background: #f0f0f0;
+            color: #666;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
         /* 排列按钮 */
         .top button {
             background-color: #749a4c;
@@ -318,9 +329,7 @@
             }
     </style>
 </head>
-
 <body>
-
     <!-- 顶部按钮和加载提示 -->
     <div class="top">
         <div class="leftArea">
@@ -331,7 +340,6 @@
                     <span>正在获取开奖数据...</span>
                 </div>
             </div>
-
         </div>
         <div class="rightArea">
             <div class="thresholdBox">
@@ -341,15 +349,12 @@
                 <button id="btnXianggang">香港</button>
                 <button id="btnUpdataHistroy">更新</button>
                 <div id="loadingHistroy" class="loading" style="display: none;">
-                    <div class="spinner"></div>
-                    <span>正在更新历史开奖...</span>
+                <div class="spinner"></div>
+                <span>正在更新历史开奖...</span>
                 </div>
+                <span class="versionBadge" title="软件版本">v1.0.0</span>
             </div>
-
         </div>
-
-
-
     </div>
 
     <!-- 左右布局 -->
@@ -841,6 +846,58 @@
             "香港": "https://kj6.kkj.app:1888/data/v_xg.json"
         };
 
+        // 公共跨域代理。前一个不可用时会自动尝试下一个。
+        // 公共代理可能限流或临时离线，因此每次请求都设置超时。
+        const publicCorsProxies = [
+            {
+                name: "CorsBridge",
+                buildUrl: targetUrl =>
+                    "https://api.cors.syrins.tech/?url=" + encodeURIComponent(targetUrl)
+            },
+            {
+                name: "Render CORS Proxy",
+                buildUrl: targetUrl =>
+                    "https://corsproxy-8uo5.onrender.com/?url=" + encodeURIComponent(targetUrl)
+            }
+        ];
+
+        async function fetchJsonViaPublicProxy(targetUrl, timeoutMs = 12000) {
+            const errors = [];
+
+            for (const proxy of publicCorsProxies) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+                try {
+                    const response = await fetch(proxy.buildUrl(targetUrl), {
+                        signal: controller.signal,
+                        cache: "no-store"
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    const text = await response.text();
+                    try {
+                        return JSON.parse(text);
+                    } catch {
+                        throw new Error("返回内容不是有效 JSON");
+                    }
+                } catch (error) {
+                    const reason = error.name === "AbortError"
+                        ? `${timeoutMs / 1000} 秒超时`
+                        : error.message;
+                    errors.push(`${proxy.name}: ${reason}`);
+                    console.warn(`${proxy.name} 请求失败，尝试下一个代理：`, error);
+                } finally {
+                    clearTimeout(timeoutId);
+                }
+            }
+
+            throw new Error("所有公共代理均失败（" + errors.join("；") + "）");
+        }
+
         let tableData = {
             新澳: [],
             老澳: [],
@@ -1054,13 +1111,7 @@
         //更新按键  相关函数
         async function loadHistoryToModule(g, y) {
             let realUrl = `https://kj.9bkj.com:1888/kj?g=${g}&y=${y}&t=${Date.now()}`;
-            //let worker = "https://lingering-field-26e2.zuoan1643.workers.dev/";
-            //let url = worker + "?url=" + encodeURIComponent(realUrl);
-
-            let worker = "https://corsproxy.io/";
-            let url = worker + realUrl;
-            let res = await fetch(url);
-            let json = await res.json();
+            let json = await fetchJsonViaPublicProxy(realUrl);
 
             let module = new ValueModuleHistroy();
             module.Year = y;
@@ -1094,35 +1145,36 @@
         //按下更新按键 循环获取并填充 然后赋值给参数
         document.getElementById("btnUpdataHistroy").onclick = async () => {
             loadingHistroy.style.display = "flex";
-            let tasks = [];
-            for (let mode = 0; mode < FuncMode.FuncModeCNT; mode++) {
-                for (let y = 0; y < Years.length; y++) {
+            try {
+                let results = [];
+
+                // 每个地区一批，每批最多 4 个请求，避免触发公共代理限流。
+                for (let mode = 0; mode < FuncMode.FuncModeCNT; mode++) {
                     const g = ModeToG[mode];
-                    tasks.push(
-                        loadHistoryToModule(g, Years[y]).then(module => {
-                            return { mode, y, module };
-                        })
+                    const batch = Years.map((year, y) =>
+                        loadHistoryToModule(g, year).then(module => ({ mode, y, module }))
                     );
-                }
-            }
-
-            let results = await Promise.all(tasks);
-
-            // 初始化容器
-            for (let r of results) {
-                if (!Histroymodule[r.mode]) {
-                    Histroymodule[r.mode] = {};
+                    results.push(...await Promise.all(batch));
                 }
 
-                Histroymodule[r.mode][r.y] = r.module;
+                // 初始化容器
+                for (let r of results) {
+                    if (!Histroymodule[r.mode]) {
+                        Histroymodule[r.mode] = {};
+                    }
+
+                    Histroymodule[r.mode][r.y] = r.module;
+                }
+
+                console.log("全部加载完成🔥", Histroymodule);
+                saveHistory();
+                refreshUI();
+            } catch (error) {
+                console.error("更新历史开奖失败：", error);
+                alert("更新历史开奖失败：\n" + error.message);
+            } finally {
+                loadingHistroy.style.display = "none";
             }
-
-            console.log("全部加载完成🔥", Histroymodule);
-            console.log(Histroymodule);
-            saveHistory();
-            loadingHistroy.style.display = "none";
-            refreshUI();
-
         };
 
 
@@ -1140,7 +1192,6 @@
         function getAnimal(num) {
             return animals[(num - 1) % 12];
         }
-
 
 
         //开奖界面显示函数
@@ -1188,6 +1239,7 @@
 
             document.getElementById("btn").onclick = async () => {
                 loading.style.display = "flex";
+                const fetchErrors = [];
                 // 1. 先清空所有高亮
                 document.querySelectorAll('.bet-item input').forEach(inp => {
                     inp.style.background = '';
@@ -1195,19 +1247,8 @@
                 let tasks = Object.keys(sources).map(async (name) => {
 
                     try {
-
-                        // let worker = "https://lingering-field-26e2.zuoan1643.workers.dev/";
-                        //let realUrl = sources[name] + "?t=" + Date.now();
-                        let worker = "https://corsproxy.io/";
-                        
                         let realUrl = sources[name] + "?t=" + Date.now();
-
-                        let url = worker + realUrl;
-                        let res = await fetch(url);
-
-                        if (!res.ok) throw new Error("HTTP " + res.status);
-
-                        let json = await res.json();
+                        let json = await fetchJsonViaPublicProxy(realUrl);
 
                         let nums = Object.values(json.Data).map(v => v.number);
 
@@ -1232,7 +1273,8 @@
                         }
 
                     } catch (e) {
-                        console.log(name + " 获取失败:", e);
+                        fetchErrors.push(name + "：" + e.message);
+                        console.error(name + " 获取失败:", e);
                     }
 
                 });
@@ -1240,6 +1282,9 @@
 
                 calcWinAndProfit()
                 loading.style.display = "none";
+                if (fetchErrors.length > 0) {
+                    alert("部分开奖数据获取失败：\n" + fetchErrors.join("\n"));
+                }
             };
 
         });
