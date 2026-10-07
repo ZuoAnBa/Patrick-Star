@@ -366,7 +366,7 @@
                 <div class="spinner"></div>
                 <span>正在更新历史开奖...</span>
                 </div>
-                <span class="versionBadge" title="软件版本">v1.5.0</span>
+                <span class="versionBadge" title="软件版本">v1.5.1</span>
             </div>
         </div>
     </div>
@@ -860,28 +860,54 @@
             "香港": "/api/lottery/current?g=xg"
         };
 
+        const remoteCurrentSources = {
+            am: "https://kj6.kkj.app:1888/data/v_am.json",
+            oldam: "https://kj6.kkj.app:1888/data/v_oldam.json",
+            xg: "https://kj6.kkj.app:1888/data/v_xg.json"
+        };
+        const forcePublicDataMode = new URLSearchParams(location.search).get("dataMode") === "public";
+
         // 公共跨域代理。前一个不可用时会自动尝试下一个。
         // 公共代理可能限流或临时离线，因此每次请求都设置超时。
         const publicCorsProxies = [
             {
-                name: "CorsBridge",
-                buildUrl: targetUrl =>
-                    "https://api.cors.syrins.tech/?url=" + encodeURIComponent(targetUrl)
-            },
-            {
                 name: "Render CORS Proxy",
                 buildUrl: targetUrl =>
                     "https://corsproxy-8uo5.onrender.com/?url=" + encodeURIComponent(targetUrl)
+            },
+            {
+                name: "CorsBridge",
+                buildUrl: targetUrl =>
+                    "https://api.cors.syrins.tech/?url=" + encodeURIComponent(targetUrl)
             }
         ];
 
-        async function fetchJsonViaPublicProxy(targetUrl, timeoutMs = 12000) {
+        function getExternalDataUrl(targetUrl) {
+            if (!targetUrl.startsWith("/")) return targetUrl;
+
+            const localUrl = new URL(targetUrl, "http://local.invalid");
+            const game = localUrl.searchParams.get("g");
+            const timestamp = localUrl.searchParams.get("t") || Date.now();
+
+            if (localUrl.pathname === "/api/lottery/current" && remoteCurrentSources[game]) {
+                return `${remoteCurrentSources[game]}?t=${timestamp}`;
+            }
+
+            if (localUrl.pathname === "/api/lottery/history") {
+                const year = localUrl.searchParams.get("year");
+                return `https://kj.9bkj.com:1888/kj?g=${encodeURIComponent(game)}&y=${encodeURIComponent(year)}&t=${timestamp}`;
+            }
+
+            return targetUrl;
+        }
+
+        async function fetchJsonViaPublicProxy(targetUrl, timeoutMs = 30000) {
             const errors = [];
 
-            // 本机程序提供同源转发，不受浏览器跨域限制，也不依赖公共代理。
-            if (targetUrl.startsWith("/")) {
+            // 由电脑程序打开时优先走本机转发；手机直接打开 HTML 时跳过此步。
+            if (targetUrl.startsWith("/") && location.protocol !== "file:" && !forcePublicDataMode) {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), timeoutMs + 10000);
+                const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
                 try {
                     const response = await fetch(targetUrl, {
                         signal: controller.signal,
@@ -892,17 +918,23 @@
                         throw new Error(`本机转发 HTTP ${response.status}：${detail}`);
                     }
                     return await response.json();
+                } catch (error) {
+                    const reason = error.name === "AbortError" ? "本机转发超时" : error.message;
+                    errors.push(reason);
+                    console.warn("本机转发失败，自动改走公共线路：", error);
                 } finally {
                     clearTimeout(timeoutId);
                 }
             }
+
+            const externalUrl = getExternalDataUrl(targetUrl);
 
             for (const proxy of publicCorsProxies) {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
                 try {
-                    const response = await fetch(proxy.buildUrl(targetUrl), {
+                    const response = await fetch(proxy.buildUrl(externalUrl), {
                         signal: controller.signal,
                         cache: "no-store"
                     });

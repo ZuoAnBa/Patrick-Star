@@ -526,9 +526,24 @@
         const animalOrder = ["马","蛇","龙","兔","虎","牛","鼠","猪","狗","鸡","猴","羊"];
 
         const predictionProxies = [
-            target => "https://api.cors.syrins.tech/?url=" + encodeURIComponent(target),
-            target => "https://corsproxy-8uo5.onrender.com/?url=" + encodeURIComponent(target)
+            target => "https://corsproxy-8uo5.onrender.com/?url=" + encodeURIComponent(target),
+            target => "https://api.cors.syrins.tech/?url=" + encodeURIComponent(target)
         ];
+        const forcePublicPredictionMode = new URLSearchParams(location.search).get("dataMode") === "public";
+        const usesPublicPredictionData = location.protocol === "file:" || forcePublicPredictionMode;
+
+        function wait(milliseconds) {
+            return new Promise(resolve => setTimeout(resolve, milliseconds));
+        }
+
+        function predictionExternalUrl(targetUrl) {
+            if (!targetUrl.startsWith("/")) return targetUrl;
+            const localUrl = new URL(targetUrl, "http://local.invalid");
+            const game = localUrl.searchParams.get("g");
+            const year = localUrl.searchParams.get("year");
+            const timestamp = localUrl.searchParams.get("t") || Date.now();
+            return `https://kj.9bkj.com:1888/kj?g=${encodeURIComponent(game)}&y=${encodeURIComponent(year)}&t=${timestamp}`;
+        }
 
         function money(value) {
             const sign = value > 0 ? "+" : "";
@@ -648,7 +663,7 @@
         async function fetchPredictionJson(targetUrl) {
             const reasons = [];
 
-            if (targetUrl.startsWith("/")) {
+            if (targetUrl.startsWith("/") && location.protocol !== "file:" && !forcePublicPredictionMode) {
                 const controller = new AbortController();
                 const timer = setTimeout(() => controller.abort(), 22000);
                 try {
@@ -658,16 +673,19 @@
                         throw new Error(`本机转发 HTTP ${response.status}：${detail}`);
                     }
                     return await response.json();
+                } catch (error) {
+                    reasons.push(error.name === "AbortError" ? "本机转发超时" : error.message);
                 } finally {
                     clearTimeout(timer);
                 }
             }
 
+            const externalUrl = predictionExternalUrl(targetUrl);
             for (const makeUrl of predictionProxies) {
                 const controller = new AbortController();
-                const timer = setTimeout(() => controller.abort(), 12000);
+                const timer = setTimeout(() => controller.abort(), 30000);
                 try {
-                    const response = await fetch(makeUrl(targetUrl), { cache: "no-store", signal: controller.signal });
+                    const response = await fetch(makeUrl(externalUrl), { cache: "no-store", signal: controller.signal });
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     return await response.json();
                 } catch (error) {
@@ -679,16 +697,32 @@
             throw new Error(reasons.join("；"));
         }
 
-        async function loadPoolHistory(g) {
-            const batches = await Promise.all(predictionYears.map(async year => {
+        async function loadPoolHistory(g, strategy) {
+            // 手机直接打开时减少公共代理请求量：近60/120期只需要本年度数据。
+            const years = usesPublicPredictionData && strategy !== "longHot"
+                ? [predictionYears[predictionYears.length - 1]]
+                : predictionYears;
+            const batches = [];
+
+            for (const year of years) {
+                if (usesPublicPredictionData && batches.length) await wait(700);
                 const url = `/api/lottery/history?g=${encodeURIComponent(g)}&year=${year}&t=${Date.now()}`;
-                const json = await fetchPredictionJson(url);
-                return (json.data || []).filter(item => item.num).map(item => {
+                let json;
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    try {
+                        json = await fetchPredictionJson(url);
+                        break;
+                    } catch (error) {
+                        if (attempt === 2 || !String(error.message).includes("429")) throw error;
+                        await wait((attempt + 1) * 2500);
+                    }
+                }
+                batches.push((json.data || []).filter(item => item.num).map(item => {
                     const numbers = item.num.split(",").map(Number);
                     return { year, issue: Number(item.qishu), date: item.date || "", special: numbers[6] };
                 }).filter(item => Number.isInteger(item.special) && item.special >= 1 && item.special <= 49)
-                  .sort((a, b) => a.issue - b.issue);
-            }));
+                  .sort((a, b) => a.issue - b.issue));
+            }
             return batches.flat().sort((a, b) => a.year - b.year || a.issue - b.issue);
         }
 
@@ -756,7 +790,7 @@
             for (const [poolName, config] of Object.entries(dailyPoolConfig)) {
                 status.textContent = `正在更新${poolName}，请稍候……`;
                 try {
-                    const history = await loadPoolHistory(config.g);
+                    const history = await loadPoolHistory(config.g, config.strategy);
                     if (!history.length) throw new Error("历史数据为空");
                     results[poolName] = {
                         numbers: rankDaily24(history, config.strategy),
