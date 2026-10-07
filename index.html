@@ -80,6 +80,24 @@
             white-space: nowrap;
         }
 
+        .routeBar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+            font-size: 12px;
+            color: #555;
+        }
+
+        .routeBar select {
+            max-width: 190px;
+            padding: 4px 6px;
+        }
+
+        #dataRouteStatus.ok { color: #287a36; }
+        #dataRouteStatus.warn { color: #a76300; }
+        #dataRouteStatus.error { color: #b3261e; }
+
         /* 排列按钮 */
         .top button {
             background-color: #749a4c;
@@ -87,18 +105,6 @@
             border: none;
             padding: 8px 12px;
             border-radius: 4px;
-        }
-
-        .top .analysisLink {
-            display: inline-flex;
-            align-items: center;
-            background-color: #456f9a;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            text-decoration: none;
-            white-space: nowrap;
         }
 
         /* 样式设置 */
@@ -361,12 +367,21 @@
                 <button id="btnXianggang">香港</button>
                 <button id="btnUpdataHistroy">更新</button>
                 <button id="btnExportHistory">导出历史</button>
-                <a class="analysisLink" href="probability-analysis.html">概率分析</a>
                 <div id="loadingHistroy" class="loading" style="display: none;">
                 <div class="spinner"></div>
                 <span>正在更新历史开奖...</span>
                 </div>
-                <span class="versionBadge" title="软件版本">v1.5.1</span>
+                <span class="versionBadge" title="软件版本">v1.6.0</span>
+            </div>
+            <div class="routeBar">
+                <label for="dataRouteSelect">数据线路：</label>
+                <select id="dataRouteSelect">
+                    <option value="public-auto">公共代理自动切换</option>
+                    <option value="mirror">公共线路 1（CORSmirror）</option>
+                    <option value="render">公共线路 2（Render）</option>
+                    <option value="local-first">本机优先，失败转公共</option>
+                </select>
+                <span id="dataRouteStatus">等待请求</span>
             </div>
         </div>
     </div>
@@ -865,22 +880,58 @@
             oldam: "https://kj6.kkj.app:1888/data/v_oldam.json",
             xg: "https://kj6.kkj.app:1888/data/v_xg.json"
         };
+        const dataRouteStoreKey = "numToNum-data-route-v1";
         const forcePublicDataMode = new URLSearchParams(location.search).get("dataMode") === "public";
+        let dataRouteMode = "public-auto";
+        if (!forcePublicDataMode) {
+            try {
+                const savedRoute = localStorage.getItem(dataRouteStoreKey);
+                if (["public-auto", "mirror", "render", "local-first"].includes(savedRoute)) {
+                    dataRouteMode = savedRoute;
+                }
+            } catch { }
+        }
 
         // 公共跨域代理。前一个不可用时会自动尝试下一个。
         // 公共代理可能限流或临时离线，因此每次请求都设置超时。
         const publicCorsProxies = [
             {
+                id: "mirror",
+                name: "公共线路 1（CORSmirror）",
+                buildUrl: targetUrl =>
+                    "https://corsmirror.onrender.com/v1/cors?url=" + encodeURIComponent(targetUrl)
+            },
+            {
+                id: "render",
                 name: "Render CORS Proxy",
                 buildUrl: targetUrl =>
                     "https://corsproxy-8uo5.onrender.com/?url=" + encodeURIComponent(targetUrl)
             },
             {
+                id: "bridge",
                 name: "CorsBridge",
                 buildUrl: targetUrl =>
                     "https://api.cors.syrins.tech/?url=" + encodeURIComponent(targetUrl)
             }
         ];
+
+        function setDataRouteStatus(message, state = "") {
+            const status = document.getElementById("dataRouteStatus");
+            if (!status) return;
+            status.textContent = message;
+            status.className = state;
+        }
+
+        function getSelectedPublicProxies() {
+            if (dataRouteMode === "mirror" || dataRouteMode === "render") {
+                return publicCorsProxies.filter(proxy => proxy.id === dataRouteMode);
+            }
+            return publicCorsProxies;
+        }
+
+        function wait(milliseconds) {
+            return new Promise(resolve => setTimeout(resolve, milliseconds));
+        }
 
         function getExternalDataUrl(targetUrl) {
             if (!targetUrl.startsWith("/")) return targetUrl;
@@ -904,10 +955,11 @@
         async function fetchJsonViaPublicProxy(targetUrl, timeoutMs = 30000) {
             const errors = [];
 
-            // 由电脑程序打开时优先走本机转发；手机直接打开 HTML 时跳过此步。
-            if (targetUrl.startsWith("/") && location.protocol !== "file:" && !forcePublicDataMode) {
+            // 默认走公共代理；只有手动选择“本机优先”时才先请求本机接口。
+            if (dataRouteMode === "local-first" && targetUrl.startsWith("/") && location.protocol !== "file:") {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+                setDataRouteStatus("正在请求本机接口…");
                 try {
                     const response = await fetch(targetUrl, {
                         signal: controller.signal,
@@ -917,10 +969,13 @@
                         const detail = await response.text();
                         throw new Error(`本机转发 HTTP ${response.status}：${detail}`);
                     }
-                    return await response.json();
+                    const json = await response.json();
+                    setDataRouteStatus("本机接口正常", "ok");
+                    return json;
                 } catch (error) {
                     const reason = error.name === "AbortError" ? "本机转发超时" : error.message;
                     errors.push(reason);
+                    setDataRouteStatus("本机失败，正在切换公共线路…", "warn");
                     console.warn("本机转发失败，自动改走公共线路：", error);
                 } finally {
                     clearTimeout(timeoutId);
@@ -929,9 +984,12 @@
 
             const externalUrl = getExternalDataUrl(targetUrl);
 
-            for (const proxy of publicCorsProxies) {
+            const selectedProxies = getSelectedPublicProxies();
+            for (let proxyIndex = 0; proxyIndex < selectedProxies.length; proxyIndex++) {
+                const proxy = selectedProxies[proxyIndex];
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+                setDataRouteStatus(`正在请求${proxy.name}…`);
 
                 try {
                     const response = await fetch(proxy.buildUrl(externalUrl), {
@@ -945,7 +1003,9 @@
 
                     const text = await response.text();
                     try {
-                        return JSON.parse(text);
+                        const json = JSON.parse(text);
+                        setDataRouteStatus(`${proxy.name}正常`, "ok");
+                        return json;
                     } catch {
                         throw new Error("返回内容不是有效 JSON");
                     }
@@ -954,12 +1014,15 @@
                         ? `${timeoutMs / 1000} 秒超时`
                         : error.message;
                     errors.push(`${proxy.name}: ${reason}`);
+                    const hasNext = proxyIndex < selectedProxies.length - 1;
+                    setDataRouteStatus(hasNext ? `${proxy.name}失败，自动切换…` : `${proxy.name}失败`, hasNext ? "warn" : "error");
                     console.warn(`${proxy.name} 请求失败，尝试下一个代理：`, error);
                 } finally {
                     clearTimeout(timeoutId);
                 }
             }
 
+            setDataRouteStatus("所选公共线路均失败，请切换线路重试", "error");
             throw new Error("所有公共代理均失败（" + errors.join("；") + "）");
         }
 
@@ -1211,13 +1274,24 @@
         async function updateAllHistoryData() {
             const results = [];
 
-            // 每个地区一批，每批最多 4 个请求，避免触发公共代理限流。
+            // 公共代理对短时间并发请求有限制，因此按奖池、年份逐个请求。
             for (let mode = 0; mode < FuncMode.FuncModeCNT; mode++) {
                 const g = ModeToG[mode];
-                const batch = Years.map((year, y) =>
-                    loadHistoryToModule(g, year).then(module => ({ mode, y, module }))
-                );
-                results.push(...await Promise.all(batch));
+                for (let y = 0; y < Years.length; y++) {
+                    if (results.length && dataRouteMode !== "local-first") await wait(450);
+                    let module;
+                    for (let attempt = 0; attempt < 2; attempt++) {
+                        try {
+                            module = await loadHistoryToModule(g, Years[y]);
+                            break;
+                        } catch (error) {
+                            if (attempt === 1) throw error;
+                            setDataRouteStatus("线路暂时繁忙，2秒后重试…", "warn");
+                            await wait(2000);
+                        }
+                    }
+                    results.push({ mode, y, module });
+                }
             }
 
             for (const result of results) {
@@ -1320,6 +1394,18 @@
 
             return rows.length - 1;
         }
+
+        const dataRouteSelect = document.getElementById("dataRouteSelect");
+        dataRouteSelect.value = dataRouteMode;
+        setDataRouteStatus(dataRouteMode === "local-first" ? "已选择本机优先" : "已选择公共代理");
+        dataRouteSelect.addEventListener("change", () => {
+            dataRouteMode = dataRouteSelect.value;
+            try { localStorage.setItem(dataRouteStoreKey, dataRouteMode); } catch { }
+            setDataRouteStatus(
+                dataRouteMode === "local-first" ? "已切换：本机优先" : "已切换：公共线路",
+                "warn"
+            );
+        });
 
         document.getElementById("btnUpdataHistroy").onclick = async () => {
             loadingHistroy.style.display = "flex";
