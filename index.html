@@ -89,6 +89,18 @@
             border-radius: 4px;
         }
 
+        .top .analysisLink {
+            display: inline-flex;
+            align-items: center;
+            background-color: #456f9a;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
         /* 样式设置 */
         .row {
             margin: 10px 0;
@@ -348,11 +360,13 @@
                 <button id="btnOldao">老澳</button>
                 <button id="btnXianggang">香港</button>
                 <button id="btnUpdataHistroy">更新</button>
+                <button id="btnExportHistory">导出历史</button>
+                <a class="analysisLink" href="probability-analysis.html">概率分析</a>
                 <div id="loadingHistroy" class="loading" style="display: none;">
                 <div class="spinner"></div>
                 <span>正在更新历史开奖...</span>
                 </div>
-                <span class="versionBadge" title="软件版本">v1.0.0</span>
+                <span class="versionBadge" title="软件版本">v1.5.0</span>
             </div>
         </div>
     </div>
@@ -841,9 +855,9 @@
             }
         }
         const sources = {
-            "新澳": "https://kj6.kkj.app:1888/data/v_am.json",
-            "老澳": "https://kj6.kkj.app:1888/data/v_oldam.json",
-            "香港": "https://kj6.kkj.app:1888/data/v_xg.json"
+            "新澳": "/api/lottery/current?g=am",
+            "老澳": "/api/lottery/current?g=oldam",
+            "香港": "/api/lottery/current?g=xg"
         };
 
         // 公共跨域代理。前一个不可用时会自动尝试下一个。
@@ -863,6 +877,25 @@
 
         async function fetchJsonViaPublicProxy(targetUrl, timeoutMs = 12000) {
             const errors = [];
+
+            // 本机程序提供同源转发，不受浏览器跨域限制，也不依赖公共代理。
+            if (targetUrl.startsWith("/")) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeoutMs + 10000);
+                try {
+                    const response = await fetch(targetUrl, {
+                        signal: controller.signal,
+                        cache: "no-store"
+                    });
+                    if (!response.ok) {
+                        const detail = await response.text();
+                        throw new Error(`本机转发 HTTP ${response.status}：${detail}`);
+                    }
+                    return await response.json();
+                } finally {
+                    clearTimeout(timeoutId);
+                }
+            }
 
             for (const proxy of publicCorsProxies) {
                 const controller = new AbortController();
@@ -1110,7 +1143,7 @@
 
         //更新按键  相关函数
         async function loadHistoryToModule(g, y) {
-            let realUrl = `https://kj.9bkj.com:1888/kj?g=${g}&y=${y}&t=${Date.now()}`;
+            let realUrl = `/api/lottery/history?g=${encodeURIComponent(g)}&year=${y}&t=${Date.now()}`;
             let json = await fetchJsonViaPublicProxy(realUrl);
 
             let module = new ValueModuleHistroy();
@@ -1142,36 +1175,141 @@
             // 👉 按期数排序
             module.records.sort((a, b) => a.issue - b.issue);
         }
-        //按下更新按键 循环获取并填充 然后赋值给参数
+        // 获取并保存三个彩种、2023-2026 四个年份的全部历史数据。
+        async function updateAllHistoryData() {
+            const results = [];
+
+            // 每个地区一批，每批最多 4 个请求，避免触发公共代理限流。
+            for (let mode = 0; mode < FuncMode.FuncModeCNT; mode++) {
+                const g = ModeToG[mode];
+                const batch = Years.map((year, y) =>
+                    loadHistoryToModule(g, year).then(module => ({ mode, y, module }))
+                );
+                results.push(...await Promise.all(batch));
+            }
+
+            for (const result of results) {
+                if (!Histroymodule[result.mode]) {
+                    Histroymodule[result.mode] = {};
+                }
+                Histroymodule[result.mode][result.y] = result.module;
+            }
+
+            console.log("全部历史数据加载完成", Histroymodule);
+            saveHistory();
+            refreshUI();
+        }
+
+        // 按年份计算号码对应的生肖：2026 的 1 是马，每往前一年顺移一位。
+        function getAnimalByYear(num, year) {
+            const number = Number(num);
+            const numericYear = Number(year);
+            if (!Number.isInteger(number) || number < 1 || number > 49) return "";
+            if (!Number.isInteger(numericYear)) return "";
+
+            const yearOffset = 2026 - numericYear;
+            const animalIndex = ((number - 1 + yearOffset) % 12 + 12) % 12;
+            return animals[animalIndex];
+        }
+
+        // 生成 Excel 可直接打开的 UTF-8 CSV 文件。
+        function exportAllHistoryCsv() {
+            const modeNames = ["新澳", "老澳", "香港"];
+            const pingHeaders = Array.from({ length: 6 }, (_, i) => [
+                `平码${i + 1}`,
+                `平码${i + 1}生肖`
+            ]).flat();
+            const rows = [[
+                "彩种", "年份", "期数", "日期",
+                ...pingHeaders,
+                "特码", "特码生肖"
+            ]];
+
+            for (let mode = 0; mode < FuncMode.FuncModeCNT; mode++) {
+                const yearIndexes = Years
+                    .map((year, index) => ({ year, index }))
+                    .sort((a, b) => a.year - b.year);
+
+                for (const { year, index } of yearIndexes) {
+                    const records = Histroymodule?.[mode]?.[index]?.records || [];
+                    const sortedRecords = [...records].sort(
+                        (a, b) => Number(a.issue) - Number(b.issue)
+                    );
+
+                    for (const record of sortedRecords) {
+                        const nums = Array.isArray(record.nums) ? record.nums : [];
+                        const pingFields = Array.from({ length: 6 }, (_, i) => {
+                            const number = nums[i] ?? "";
+                            return [number, getAnimalByYear(number, year)];
+                        }).flat();
+                        const te = record.te ?? "";
+                        rows.push([
+                            modeNames[mode],
+                            year,
+                            record.issue ?? "",
+                            record.time ?? record.date ?? "",
+                            ...pingFields,
+                            te,
+                            getAnimalByYear(te, year)
+                        ]);
+                    }
+                }
+            }
+
+            if (rows.length === 1) {
+                throw new Error("没有可导出的历史数据");
+            }
+
+            const escapeCsv = value => {
+                const text = String(value ?? "");
+                return /[",\r\n]/.test(text)
+                    ? `"${text.replace(/"/g, '""')}"`
+                    : text;
+            };
+            const csv = "\uFEFF" + rows
+                .map(row => row.map(escapeCsv).join(","))
+                .join("\r\n");
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+            const downloadUrl = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            const now = new Date();
+            const dateText = [
+                now.getFullYear(),
+                String(now.getMonth() + 1).padStart(2, "0"),
+                String(now.getDate()).padStart(2, "0")
+            ].join("-");
+
+            link.href = downloadUrl;
+            link.download = `开奖历史_2023-2026_${dateText}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+
+            return rows.length - 1;
+        }
+
         document.getElementById("btnUpdataHistroy").onclick = async () => {
             loadingHistroy.style.display = "flex";
             try {
-                let results = [];
-
-                // 每个地区一批，每批最多 4 个请求，避免触发公共代理限流。
-                for (let mode = 0; mode < FuncMode.FuncModeCNT; mode++) {
-                    const g = ModeToG[mode];
-                    const batch = Years.map((year, y) =>
-                        loadHistoryToModule(g, year).then(module => ({ mode, y, module }))
-                    );
-                    results.push(...await Promise.all(batch));
-                }
-
-                // 初始化容器
-                for (let r of results) {
-                    if (!Histroymodule[r.mode]) {
-                        Histroymodule[r.mode] = {};
-                    }
-
-                    Histroymodule[r.mode][r.y] = r.module;
-                }
-
-                console.log("全部加载完成🔥", Histroymodule);
-                saveHistory();
-                refreshUI();
+                await updateAllHistoryData();
             } catch (error) {
                 console.error("更新历史开奖失败：", error);
                 alert("更新历史开奖失败：\n" + error.message);
+            } finally {
+                loadingHistroy.style.display = "none";
+            }
+        };
+
+        document.getElementById("btnExportHistory").onclick = async () => {
+            loadingHistroy.style.display = "flex";
+            try {
+                await updateAllHistoryData();
+                const count = exportAllHistoryCsv();
+                alert(`导出成功，共 ${count} 条历史记录。`);
+            } catch (error) {
+                console.error("导出历史数据失败：", error);
+                alert("导出历史数据失败：\n" + error.message);
             } finally {
                 loadingHistroy.style.display = "none";
             }
@@ -1247,7 +1385,9 @@
                 let tasks = Object.keys(sources).map(async (name) => {
 
                     try {
-                        let realUrl = sources[name] + "?t=" + Date.now();
+                        let realUrl = sources[name]
+                            + (sources[name].includes("?") ? "&" : "?")
+                            + "t=" + Date.now();
                         let json = await fetchJsonViaPublicProxy(realUrl);
 
                         let nums = Object.values(json.Data).map(v => v.number);

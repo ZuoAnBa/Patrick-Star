@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>独立奖池概率分析</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f4f6f1;
+            --card: #ffffff;
+            --text: #1f2a1f;
+            --muted: #667066;
+            --line: #d9dfd5;
+            --green: #537d39;
+            --green-soft: #e8f1e3;
+            --amber: #8a5a00;
+            --amber-soft: #fff4d8;
+            --red: #a43a32;
+            --red-soft: #fdeae8;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            line-height: 1.55;
+        }
+
+        button, a { font: inherit; }
+
+        .page {
+            width: min(1120px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 28px 0 52px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 18px;
+        }
+
+        h1, h2, h3, p { margin-top: 0; }
+        h1 { margin-bottom: 4px; font-size: clamp(26px, 4vw, 38px); }
+        h2 { margin-bottom: 12px; font-size: 21px; }
+        h3 { margin-bottom: 8px; font-size: 17px; }
+        .subtitle, .muted { color: var(--muted); }
+        .subtitle { margin-bottom: 0; }
+
+        .back {
+            display: inline-block;
+            flex: 0 0 auto;
+            padding: 8px 13px;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            background: var(--card);
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .notice {
+            margin-bottom: 18px;
+            padding: 14px 16px;
+            border: 1px solid #e7c66f;
+            border-left: 5px solid #d39a18;
+            border-radius: 8px;
+            background: var(--amber-soft);
+        }
+
+        .notice strong { display: block; margin-bottom: 3px; }
+
+        .daily-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+
+        .daily-head h2 { margin-bottom: 2px; }
+        .refresh-button {
+            flex: 0 0 auto;
+            padding: 9px 14px;
+            border: 0;
+            border-radius: 7px;
+            background: var(--green);
+            color: #fff;
+            cursor: pointer;
+        }
+        .refresh-button:disabled { opacity: .6; cursor: wait; }
+        .prediction-status { min-height: 22px; margin: 0; color: var(--muted); font-size: 13px; }
+        .prediction-status.error { color: var(--red); }
+        .prediction-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+        .prediction-card { padding: 14px; border: 1px solid var(--line); border-radius: 9px; background: #fbfcfa; }
+        .prediction-card h3 { display: flex; justify-content: space-between; gap: 8px; }
+        .prediction-card h3 span { color: var(--muted); font-size: 12px; font-weight: 400; }
+        .prediction-numbers { display: grid; grid-template-columns: repeat(6, minmax(35px, 1fr)); gap: 6px; margin: 12px 0; }
+        .pick-number { padding: 5px 2px; border-radius: 6px; text-align: center; }
+        .pick-number strong { display: block; font-size: 16px; line-height: 1.25; }
+        .pick-number small { display: block; font-size: 10px; }
+        .wave-red { background: #fde7e5; color: #9e2e28; }
+        .wave-green { background: #e3f2e6; color: #27633a; }
+        .wave-blue { background: #e5edfb; color: #28569b; }
+        .prediction-meta { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+        .prediction-warning { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+
+        .recovery-grid { display: grid; grid-template-columns: minmax(230px, .75fr) minmax(0, 1.6fr); gap: 18px; }
+        .recovery-controls { display: grid; gap: 12px; align-content: start; }
+        .result-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .result-button { min-height: 42px; border: 0; border-radius: 7px; color: #fff; cursor: pointer; }
+        .result-button.win { background: var(--green); }
+        .result-button.loss { background: var(--red); }
+        .undo-button { padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--text); cursor: pointer; }
+        .undo-button:disabled { opacity: .5; cursor: default; }
+        .recovery-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px; }
+        .recovery-metric { padding: 12px; border-radius: 8px; background: #f3f5f1; }
+        .recovery-metric .value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .recovery-metric .label { color: var(--muted); font-size: 12px; }
+        .recovery-rule { margin: 12px 0; padding: 11px 13px; background: var(--amber-soft); border-left: 4px solid var(--amber); }
+        .empty-history { color: var(--muted); text-align: center; }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin: 18px 0;
+        }
+
+        .tab {
+            min-width: 86px;
+            padding: 9px 16px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: var(--card);
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .tab.active {
+            border-color: var(--green);
+            background: var(--green);
+            color: #fff;
+        }
+
+        .grid { display: grid; gap: 16px; }
+        .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .two { grid-template-columns: minmax(0, 1.7fr) minmax(270px, 1fr); }
+
+        .card {
+            padding: 18px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: var(--card);
+        }
+
+        .stat-value { font-size: 27px; font-weight: 700; line-height: 1.2; }
+        .stat-label { margin-top: 6px; color: var(--muted); font-size: 13px; }
+        .section { margin-top: 18px; }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: minmax(270px, 0.9fr) minmax(0, 1.4fr);
+            gap: 18px;
+        }
+
+        .controls { display: grid; gap: 14px; }
+        .field { display: grid; gap: 6px; }
+        .field label { color: var(--muted); font-size: 13px; }
+        .field-line { display: grid; grid-template-columns: minmax(0, 1fr) 76px; gap: 10px; align-items: center; }
+        input[type="range"] { width: 100%; accent-color: var(--green); }
+        input[type="number"], select {
+            width: 100%;
+            min-height: 38px;
+            padding: 7px 9px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: var(--card);
+            color: var(--text);
+        }
+
+        .quick-row, .zodiac-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+        .quick, .zodiac, .clear-zodiac {
+            padding: 7px 10px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: var(--card);
+            color: var(--text);
+            cursor: pointer;
+        }
+        .quick:hover, .zodiac:hover, .clear-zodiac:hover { border-color: var(--green); }
+        .zodiac.selected { border-color: var(--green); background: var(--green-soft); color: #365525; }
+        .zodiac-summary { min-height: 24px; margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+
+        .calc-results { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+        .calc-result { padding: 13px; border-radius: 8px; background: #f3f5f1; }
+        .calc-result .value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .calc-result .label { color: var(--muted); font-size: 12px; }
+        .positive { color: var(--green); }
+        .negative { color: var(--red); }
+        .calc-explain { margin: 13px 0 0; padding: 12px; border-left: 4px solid var(--amber); background: var(--amber-soft); }
+
+        .candidates {
+            display: grid;
+            grid-template-columns: repeat(10, minmax(74px, 1fr));
+            gap: 8px;
+        }
+
+        .candidate {
+            padding: 11px 7px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fbfcfa;
+            text-align: center;
+        }
+
+        .candidate .number { color: var(--green); font-size: 21px; font-weight: 800; }
+        .candidate .probability { color: var(--muted); font-size: 12px; }
+
+        .chart { display: grid; gap: 12px; }
+        .bar-row { display: grid; grid-template-columns: 104px minmax(130px, 1fr) 58px; gap: 10px; align-items: center; }
+        .bar-label, .bar-value { font-size: 13px; }
+        .bar-value { text-align: right; font-variant-numeric: tabular-nums; }
+        .track { position: relative; height: 18px; border-radius: 4px; background: #edf0ea; overflow: hidden; }
+        .fill { height: 100%; border-radius: 4px; background: var(--green); }
+        .baseline { position: absolute; top: 0; bottom: 0; left: 68.03%; width: 2px; background: #c67b00; }
+        .legend { margin: 12px 0 0 114px; color: var(--muted); font-size: 12px; }
+        .legend-mark { display: inline-block; width: 14px; height: 2px; margin-right: 5px; background: #c67b00; vertical-align: middle; }
+
+        .judgement {
+            padding: 12px;
+            border-radius: 7px;
+            background: var(--red-soft);
+            color: var(--red);
+        }
+
+        .note-list { margin: 14px 0 0; padding-left: 20px; }
+        .note-list li { margin: 5px 0; }
+
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+        th { background: #f3f5f1; color: #4a554a; }
+        td.number-cell { text-align: right; font-variant-numeric: tabular-nums; }
+        .status { color: var(--red); }
+
+        .budget-box {
+            padding: 14px;
+            border-radius: 8px;
+            background: var(--green-soft);
+        }
+
+        .footer-note { margin: 20px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
+
+        @media (max-width: 880px) {
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .two { grid-template-columns: 1fr; }
+            .calculator-grid { grid-template-columns: 1fr; }
+            .recovery-grid { grid-template-columns: 1fr; }
+            .recovery-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .prediction-grid { grid-template-columns: 1fr; }
+            .prediction-numbers { grid-template-columns: repeat(8, minmax(35px, 1fr)); }
+            .candidates { grid-template-columns: repeat(5, minmax(58px, 1fr)); }
+        }
+
+        @media (max-width: 520px) {
+            .page { width: min(100% - 20px, 1120px); padding-top: 18px; }
+            .topbar { display: block; }
+            .daily-head { align-items: flex-start; }
+            .back { margin-top: 12px; }
+            .stats { grid-template-columns: 1fr 1fr; }
+            .card { padding: 14px; }
+            .calc-results { grid-template-columns: 1fr 1fr; }
+            .recovery-summary { grid-template-columns: 1fr 1fr; }
+            .prediction-numbers { grid-template-columns: repeat(6, minmax(35px, 1fr)); }
+            .candidates { grid-template-columns: repeat(2, 1fr); }
+            .bar-row { grid-template-columns: 88px minmax(90px, 1fr) 52px; gap: 7px; }
+            .legend { margin-left: 95px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <div>
+                <h1>2023–2026 特码概率分析</h1>
+                <p class="subtitle">三个奖池独立统计 · 数据截止 2026-09-12 · 共 2,664 期</p>
+            </div>
+            <a class="back" href="index.html">← 返回主面板</a>
+        </header>
+
+        <div class="notice">
+            <strong>结论：目前没有发现可以长期保证的预测优势</strong>
+            24码回测中，新澳近60期低频规则在2026年暂时高于48.98%随机基准；老澳与香港没有稳定优势。每日号码只能作为统计观察，不代表下一期真实中奖率已经确定提高。
+        </div>
+
+        <section class="card section" style="margin-top:0">
+            <div class="daily-head">
+                <div>
+                    <h2>每日独立奖池24码</h2>
+                    <p class="prediction-status" id="predictionStatus">正在读取最新历史数据……</p>
+                </div>
+                <button type="button" class="refresh-button" id="refreshPrediction">刷新最新数据</button>
+            </div>
+            <div class="prediction-grid" id="predictionGrid">
+                <div class="prediction-card">新澳计算中……</div>
+                <div class="prediction-card">老澳计算中……</div>
+                <div class="prediction-card">香港计算中……</div>
+            </div>
+            <p class="prediction-warning">24个不同号码的随机理论覆盖率为48.98%。下方排序每天随最新开奖更新，但不代表真实胜率一定高于48.98%，也不应通过倍投追损。</p>
+        </section>
+
+        <section class="card section">
+            <h2>24码阶梯下注记录</h2>
+            <p class="muted">按你的规则：每码20元起步；未中升一级，下一次命中可补回上一期损失；命中后降一级。三个奖池分别保存，互不混用。</p>
+            <div class="recovery-grid">
+                <div class="recovery-controls">
+                    <div class="field">
+                        <label for="recoveryPool">当前奖池</label>
+                        <select id="recoveryPool">
+                            <option value="新澳">新澳</option>
+                            <option value="老澳">老澳</option>
+                            <option value="香港">香港</option>
+                        </select>
+                    </div>
+                    <div class="result-buttons">
+                        <button type="button" class="result-button win" id="recordWin">本期命中</button>
+                        <button type="button" class="result-button loss" id="recordLoss">本期未中</button>
+                    </div>
+                    <button type="button" class="undo-button" id="undoRecovery">撤销最后一条</button>
+                    <p class="muted" style="margin:0">每次开奖后只记录一次。记录会保存在本机浏览器中。</p>
+                </div>
+                <div>
+                    <div class="recovery-summary" aria-live="polite">
+                        <div class="recovery-metric"><div class="value" id="recoveryLevel"></div><div class="label">下一期档位</div></div>
+                        <div class="recovery-metric"><div class="value" id="recoveryStake"></div><div class="label">下一期每码</div></div>
+                        <div class="recovery-metric"><div class="value" id="recoveryTotal"></div><div class="label">下一期总下注</div></div>
+                        <div class="recovery-metric"><div class="value positive" id="recoveryHitProfit"></div><div class="label">下一期命中净赚</div></div>
+                        <div class="recovery-metric"><div class="value" id="recoveryCumulative"></div><div class="label">累计盈亏</div></div>
+                    </div>
+                    <div class="recovery-rule" id="recoveryRule"></div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>记录时间</th><th>结果</th><th>档位</th><th>每码</th><th>总下注</th><th>本期盈亏</th></tr></thead>
+                            <tbody id="recoveryRows"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <p class="prediction-warning">这套规则只能让下一次命中补回上一期损失，不能保证补回全部累计亏损，也不会改变1赔47的负期望。24码未中概率仍为25/49，即51.02%。</p>
+        </section>
+
+        <nav class="tabs" aria-label="选择独立奖池">
+            <button class="tab active" data-pool="新澳">新澳</button>
+            <button class="tab" data-pool="老澳">老澳</button>
+            <button class="tab" data-pool="香港">香港</button>
+        </nav>
+
+        <section class="grid stats" aria-label="主要统计">
+            <div class="card"><div class="stat-value" id="sample"></div><div class="stat-label">独立样本数（期）</div></div>
+            <div class="card"><div class="stat-value">2.04%</div><div class="stat-label">单个号码理论概率（1/49）</div></div>
+            <div class="card"><div class="stat-value" id="chiP"></div><div class="stat-label">均匀分布检验 p 值</div></div>
+            <div class="card"><div class="stat-value" id="logLoss"></div><div class="stat-label">模型相对随机的损失（越低越好）</div></div>
+        </section>
+
+        <section class="card section">
+            <h2>多号码盈利概率计算器</h2>
+            <p class="muted">默认按“每个号码下注同样金额、中奖总返还 47 倍（含该号码本金）”计算。若平台写的是净赢 47 倍，请切换赔率解释。</p>
+            <div class="calculator-grid">
+                <div class="controls">
+                    <div class="field">
+                        <label for="numberCount">本期覆盖号码数：<strong id="numberCountText">10</strong> 个</label>
+                        <div class="field-line">
+                            <input id="numberCount" type="range" min="1" max="49" value="10">
+                            <input id="numberCountInput" type="number" min="1" max="49" value="10" aria-label="覆盖号码数">
+                        </div>
+                        <div class="quick-row" aria-label="常用号码数量">
+                            <button class="quick" type="button" data-count="1">1个</button>
+                            <button class="quick" type="button" data-count="4">1个四码生肖</button>
+                            <button class="quick" type="button" data-count="5">马（5码）</button>
+                            <button class="quick" type="button" data-count="10">10个</button>
+                            <button class="quick" type="button" data-count="45">11生肖/45码</button>
+                            <button class="quick" type="button" data-count="46">最高单期盈利率</button>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="stakePerNumber">每个号码下注金额（元）</label>
+                        <input id="stakePerNumber" type="number" min="0.01" step="0.01" value="1">
+                    </div>
+                    <div class="field">
+                        <label for="payoutMode">“1赔47”的解释</label>
+                        <select id="payoutMode">
+                            <option value="gross">中奖总返 47 倍（含本金）</option>
+                            <option value="net">净赢 47 倍，另退本金</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <div class="calc-results" aria-live="polite">
+                        <div class="calc-result"><div class="value" id="profitProbability"></div><div class="label">本期真正盈利概率</div></div>
+                        <div class="calc-result"><div class="value" id="totalStake"></div><div class="label">本期总下注</div></div>
+                        <div class="calc-result"><div class="value positive" id="hitProfit"></div><div class="label">覆盖号码开出时净盈亏</div></div>
+                        <div class="calc-result"><div class="value negative" id="missLoss"></div><div class="label">未覆盖号码开出时净盈亏</div></div>
+                        <div class="calc-result"><div class="value negative" id="expectedProfit"></div><div class="label">每期数学期望</div></div>
+                        <div class="calc-result"><div class="value negative" id="lossRate"></div><div class="label">长期理论亏损率</div></div>
+                    </div>
+                    <div class="calc-explain" id="calcExplain"></div>
+                </div>
+            </div>
+
+            <h3 style="margin-top:20px">按 2026 年生肖选择号码</h3>
+            <p class="muted">这里把生肖当作一组固定号码，仍按每个号码 1赔47 计算；如果平台的“生肖下注”有单独赔率，本计算不适用。</p>
+            <div class="zodiac-grid" id="zodiacGrid"></div>
+            <p class="zodiac-summary" id="zodiacSummary">尚未选择生肖。</p>
+        </section>
+
+        <section class="card section">
+            <h2><span id="poolName"></span>：下一期探索性候选</h2>
+            <p class="muted">按长期频率加平滑后排序。数字下方是模型估计值，不是保证中奖率；模型尚未通过样本外验证。</p>
+            <div class="candidates" id="candidates"></div>
+        </section>
+
+        <section class="grid two section">
+            <div class="card">
+                <h2>2026 年前十号码策略回测</h2>
+                <div class="chart" id="chart"></div>
+                <div class="legend"><span class="legend-mark"></span>随机选择 10 个号码的理论基准：20.41%</div>
+            </div>
+            <div class="card">
+                <h2><span id="judgePool"></span>判断</h2>
+                <p class="muted" id="range"></p>
+                <div class="judgement">所有策略均未达到 5% 的统计显著性，暂不能认定高于随机。</div>
+                <ul class="note-list" id="categoryNotes"></ul>
+                <p class="muted" id="intervalNote" style="margin-top:14px;margin-bottom:0"></p>
+            </div>
+        </section>
+
+        <section class="card section">
+            <h2>回测明细</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>策略</th><th>2026 命中</th><th>命中率</th><th>高于随机的 p 值</th><th>判断</th></tr></thead>
+                    <tbody id="backtestRows"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="grid two section">
+            <div class="card">
+                <h2>年度热号稳定性</h2>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>相邻年份</th><th>频率秩相关</th><th>判断</th></tr></thead>
+                        <tbody id="correlationRows"></tbody>
+                    </table>
+                </div>
+                <p class="muted" style="margin:12px 0 0">相关系数接近 0，表示上一年的热号无法稳定延续到下一年。</p>
+            </div>
+            <div class="card">
+                <h2>下注参考</h2>
+                <div class="budget-box">
+                    三个奖池必须分别记账。不要倍投或追损；若仍要测试，只做固定小额、每个号码等额，每期风险不超过可承受娱乐预算的 1%，达到预设亏损上限即停止。
+                </div>
+                <p class="muted" style="margin:14px 0 0">没有实际赔率、返利和手续费数据，只能比较命中率，不能证明能获得正收益。</p>
+            </div>
+        </section>
+
+        <p class="footer-note">分析来源：本地导出的 2023–2026 历史 CSV。仅供统计研究与娱乐参考。</p>
+    </main>
+
+    <script>
+        const pools = {
+            "新澳": {
+                sample: 1351, range: "2023-01-01 至 2026-09-12", chiP: 0.8298, logLoss: 0.00128,
+                candidates: [[1,2.820],[6,2.694],[16,2.569],[9,2.444],[46,2.444],[39,2.444],[23,2.381],[44,2.381],[41,2.318],[49,2.318]],
+                backtests: [["近60期热号",17.65,"45/255",0.881],["近120期热号",17.25,"44/255",0.910],["长期热号",24.31,"62/255",0.073],["近60期冷号",21.18,"54/255",0.405],["最久未开",21.57,"55/255",0.346]],
+                correlations: [["2023–2024",0.042],["2024–2025",-0.241],["2025–2026",-0.221]],
+                notes: ["大小：小 50.63%，大 49.37%", "单双：单 50.38%，双 49.62%", "波色：红波 34.40%"],
+                interval: "长期热号策略的 95% 区间：19.46%–29.93%；随机基准 20.41% 落在区间内。"
+            },
+            "老澳": {
+                sample: 794, range: "2024-07-12 至 2026-09-12", chiP: 0.0544, logLoss: 0.01047,
+                candidates: [[18,3.561],[47,2.791],[43,2.695],[26,2.599],[27,2.502],[42,2.502],[33,2.406],[16,2.310],[24,2.310],[15,2.310]],
+                backtests: [["近60期热号",21.18,"54/255",0.405],["近120期热号",20.39,"52/255",0.527],["长期热号",18.43,"47/255",0.804],["近60期冷号",18.43,"47/255",0.804],["最久未开",18.82,"48/255",0.757]],
+                correlations: [["2024–2025",0.242],["2025–2026",0.010]],
+                notes: ["大小：大 53.90%，小 46.10%", "单双：单 51.01%，双 48.99%", "波色：绿波 34.65%"],
+                interval: "长期热号策略的 95% 区间：14.15%–23.65%；随机基准 20.41% 落在区间内。"
+            },
+            "香港": {
+                sample: 519, range: "2023-01-03 至 2026-09-12", chiP: 0.0504, logLoss: 0.01289,
+                candidates: [[13,3.141],[1,2.880],[23,2.880],[7,2.749],[8,2.749],[45,2.749],[44,2.749],[11,2.618],[4,2.618],[14,2.487]],
+                backtests: [["近60期热号",15.15,"15/99",0.927],["近120期热号",17.17,"17/99",0.821],["长期热号",24.24,"24/99",0.203],["近60期冷号",17.17,"17/99",0.821],["最久未开",15.15,"15/99",0.927]],
+                correlations: [["2023–2024",0.056],["2024–2025",0.146],["2025–2026",-0.016]],
+                notes: ["大小：小 51.83%，大 48.17%", "单双：单 50.26%，双 49.74%", "波色：红波 39.27%"],
+                interval: "长期热号策略的 95% 区间：16.87%–33.54%；随机基准 20.41% 落在区间内。"
+            }
+        };
+
+        const el = id => document.getElementById(id);
+
+        const zodiacNumbers = {
+            "马": [1,13,25,37,49], "蛇": [2,14,26,38], "龙": [3,15,27,39],
+            "兔": [4,16,28,40], "虎": [5,17,29,41], "牛": [6,18,30,42],
+            "鼠": [7,19,31,43], "猪": [8,20,32,44], "狗": [9,21,33,45],
+            "鸡": [10,22,34,46], "猴": [11,23,35,47], "羊": [12,24,36,48]
+        };
+        const selectedZodiacs = new Set();
+
+        const dailyPoolConfig = {
+            "新澳": { g: "am", strategy: "cold60", method: "近60期低频排序", backtest: "2026回测：141/255（55.29%）" },
+            "老澳": { g: "oldam", strategy: "exp120", method: "120期衰减频率", backtest: "2026回测：131/255（51.37%）" },
+            "香港": { g: "xg", strategy: "longHot", method: "长期频率排序", backtest: "2026回测：47/99（47.47%）" }
+        };
+        const predictionYears = [2023, 2024, 2025, 2026];
+        const predictionCacheKey = "daily24Prediction-v2";
+        const recoveryStoreKey = "daily24Recovery-v1";
+        const recoveryBaseCents = 2000;
+        const recoveryNumberCount = 24;
+        const recoveryGrossMultiple = 47;
+        const redWave = new Set([1,2,7,8,12,13,18,19,23,24,29,30,34,35,40,45,46]);
+        const greenWave = new Set([5,6,11,16,17,21,22,27,28,32,33,38,39,43,44,49]);
+        const animalOrder = ["马","蛇","龙","兔","虎","牛","鼠","猪","狗","鸡","猴","羊"];
+
+        const predictionProxies = [
+            target => "https://api.cors.syrins.tech/?url=" + encodeURIComponent(target),
+            target => "https://corsproxy-8uo5.onrender.com/?url=" + encodeURIComponent(target)
+        ];
+
+        function money(value) {
+            const sign = value > 0 ? "+" : "";
+            return sign + value.toFixed(2) + "元";
+        }
+
+        function localDateKey() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+        }
+
+        function loadRecoveryState() {
+            const empty = { "新澳": [], "老澳": [], "香港": [] };
+            try {
+                const saved = JSON.parse(localStorage.getItem(recoveryStoreKey) || "null");
+                if (!saved) return empty;
+                for (const poolName of Object.keys(empty)) {
+                    if (!Array.isArray(saved[poolName])) saved[poolName] = [];
+                }
+                return saved;
+            } catch {
+                return empty;
+            }
+        }
+
+        let recoveryState = loadRecoveryState();
+
+        function recoveryLevelFromRecords(records) {
+            let level = 1;
+            for (const record of records) {
+                level = record.result === "未中" ? level + 1 : Math.max(1, level - 1);
+            }
+            return level;
+        }
+
+        function recoveryStakeAtLevel(level) {
+            let cents = recoveryBaseCents;
+            for (let index = 1; index < level; index++) {
+                cents = Math.ceil(cents * recoveryNumberCount / (recoveryGrossMultiple - recoveryNumberCount));
+            }
+            return cents;
+        }
+
+        function formatCents(cents, signed = false) {
+            const prefix = signed && cents > 0 ? "+" : "";
+            return prefix + (cents / 100).toFixed(2) + "元";
+        }
+
+        function saveRecoveryState() {
+            localStorage.setItem(recoveryStoreKey, JSON.stringify(recoveryState));
+        }
+
+        function renderRecovery() {
+            const poolName = el("recoveryPool").value;
+            const records = recoveryState[poolName] || [];
+            const level = recoveryLevelFromRecords(records);
+            const stakeCents = recoveryStakeAtLevel(level);
+            const totalCents = stakeCents * recoveryNumberCount;
+            const hitProfitCents = stakeCents * (recoveryGrossMultiple - recoveryNumberCount);
+            const cumulativeCents = records.reduce((sum, record) => sum + record.profitCents, 0);
+
+            el("recoveryLevel").textContent = `第${level}档`;
+            el("recoveryStake").textContent = formatCents(stakeCents);
+            el("recoveryTotal").textContent = formatCents(totalCents);
+            el("recoveryHitProfit").textContent = formatCents(hitProfitCents, true);
+            el("recoveryCumulative").textContent = formatCents(cumulativeCents, true);
+            el("recoveryCumulative").className = "value " + (cumulativeCents >= 0 ? "positive" : "negative");
+            el("undoRecovery").disabled = records.length === 0;
+
+            if (level === 1) {
+                el("recoveryRule").innerHTML = `当前为基础档：24个号码每个20元，总下注480元。命中净赚460元，未中亏480元。`;
+            } else {
+                const previousStake = recoveryStakeAtLevel(level - 1);
+                const previousLoss = previousStake * recoveryNumberCount;
+                el("recoveryRule").innerHTML = `上一档未中损失 ${formatCents(previousLoss)}。本档每码 ${formatCents(stakeCents)}，若命中净赚 ${formatCents(hitProfitCents)}，可以补回上一期损失；命中后下一期退回第${level - 1}档。`;
+            }
+
+            const visible = records.slice(-10).reverse();
+            el("recoveryRows").innerHTML = visible.length ? visible.map(record => `
+                <tr>
+                    <td>${record.time}</td><td>${record.result}</td><td>第${record.level}档</td>
+                    <td class="number-cell">${formatCents(record.stakeCents)}</td>
+                    <td class="number-cell">${formatCents(record.totalCents)}</td>
+                    <td class="number-cell ${record.profitCents >= 0 ? "positive" : "negative"}">${formatCents(record.profitCents, true)}</td>
+                </tr>`).join("") : `<tr><td colspan="6" class="empty-history">还没有记录</td></tr>`;
+        }
+
+        function recordRecoveryResult(isWin) {
+            const poolName = el("recoveryPool").value;
+            const records = recoveryState[poolName];
+            const level = recoveryLevelFromRecords(records);
+            const stakeCents = recoveryStakeAtLevel(level);
+            const totalCents = stakeCents * recoveryNumberCount;
+            const profitCents = isWin
+                ? stakeCents * (recoveryGrossMultiple - recoveryNumberCount)
+                : -totalCents;
+            records.push({
+                time: new Date().toLocaleString("zh-CN", { hour12: false }),
+                result: isWin ? "命中" : "未中",
+                level, stakeCents, totalCents, profitCents
+            });
+            saveRecoveryState();
+            renderRecovery();
+        }
+
+        function animalFor(number, year = 2026) {
+            const offset = 2026 - year;
+            return animalOrder[((number - 1 + offset) % 12 + 12) % 12];
+        }
+
+        function waveClass(number) {
+            if (redWave.has(number)) return "wave-red";
+            if (greenWave.has(number)) return "wave-green";
+            return "wave-blue";
+        }
+
+        async function fetchPredictionJson(targetUrl) {
+            const reasons = [];
+
+            if (targetUrl.startsWith("/")) {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 22000);
+                try {
+                    const response = await fetch(targetUrl, { cache: "no-store", signal: controller.signal });
+                    if (!response.ok) {
+                        const detail = await response.text();
+                        throw new Error(`本机转发 HTTP ${response.status}：${detail}`);
+                    }
+                    return await response.json();
+                } finally {
+                    clearTimeout(timer);
+                }
+            }
+
+            for (const makeUrl of predictionProxies) {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 12000);
+                try {
+                    const response = await fetch(makeUrl(targetUrl), { cache: "no-store", signal: controller.signal });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    reasons.push(error.name === "AbortError" ? "请求超时" : error.message);
+                } finally {
+                    clearTimeout(timer);
+                }
+            }
+            throw new Error(reasons.join("；"));
+        }
+
+        async function loadPoolHistory(g) {
+            const batches = await Promise.all(predictionYears.map(async year => {
+                const url = `/api/lottery/history?g=${encodeURIComponent(g)}&year=${year}&t=${Date.now()}`;
+                const json = await fetchPredictionJson(url);
+                return (json.data || []).filter(item => item.num).map(item => {
+                    const numbers = item.num.split(",").map(Number);
+                    return { year, issue: Number(item.qishu), date: item.date || "", special: numbers[6] };
+                }).filter(item => Number.isInteger(item.special) && item.special >= 1 && item.special <= 49)
+                  .sort((a, b) => a.issue - b.issue);
+            }));
+            return batches.flat().sort((a, b) => a.year - b.year || a.issue - b.issue);
+        }
+
+        function rankDaily24(history, strategy) {
+            const values = history.map(item => item.special);
+            const score = Array(50).fill(0);
+            if (strategy === "cold60") {
+                const recent = values.slice(-60);
+                for (let number = 1; number <= 49; number++) score[number] = -recent.filter(value => value === number).length;
+            } else if (strategy === "exp120") {
+                score.fill(1);
+                for (let age = 1; age <= values.length; age++) {
+                    const number = values[values.length - age];
+                    score[number] += Math.pow(0.5, age / 120);
+                }
+            } else {
+                score.fill(1);
+                values.forEach(number => score[number]++);
+            }
+            return Array.from({ length: 49 }, (_, index) => index + 1)
+                .sort((a, b) => score[b] - score[a] || a - b)
+                .slice(0, 24);
+        }
+
+        function renderDailyPredictions(results, cached = false) {
+            const cards = Object.entries(dailyPoolConfig).map(([poolName, config]) => {
+                const result = results[poolName];
+                if (!result || result.error) {
+                    return `<div class="prediction-card"><h3>${poolName}</h3><p class="status">获取失败：${result?.error || "没有数据"}</p></div>`;
+                }
+                const numberHtml = result.numbers.map(number =>
+                    `<div class="pick-number ${waveClass(number)}"><strong>${String(number).padStart(2, "0")}</strong><small>${animalFor(number, 2026)}</small></div>`
+                ).join("");
+                return `<article class="prediction-card">
+                    <h3>${poolName}<span>24/49 · 48.98%</span></h3>
+                    <div class="prediction-numbers">${numberHtml}</div>
+                    <p class="prediction-meta">规则：${config.method}</p>
+                    <p class="prediction-meta">${config.backtest}</p>
+                    <p class="prediction-meta">最新数据：${result.latestDate || "日期未知"}，共 ${result.sample.toLocaleString("zh-CN")} 期</p>
+                </article>`;
+            }).join("");
+            el("predictionGrid").innerHTML = cards;
+            const time = new Date(results.generatedAt || Date.now()).toLocaleString("zh-CN", { hour12: false });
+            el("predictionStatus").className = "prediction-status";
+            el("predictionStatus").textContent = `${cached ? "已读取今日预测" : "已更新今日预测"}：${time}`;
+        }
+
+        async function updateDailyPredictions(force = false) {
+            const button = el("refreshPrediction");
+            const status = el("predictionStatus");
+            if (!force) {
+                try {
+                    const cached = JSON.parse(localStorage.getItem(predictionCacheKey) || "null");
+                    if (cached && cached.date === localDateKey() && cached.results) {
+                        renderDailyPredictions(cached.results, true);
+                        return;
+                    }
+                } catch { localStorage.removeItem(predictionCacheKey); }
+            }
+
+            button.disabled = true;
+            status.className = "prediction-status";
+            status.textContent = "正在分别更新新澳、老澳、香港，请稍候……";
+            const results = { generatedAt: Date.now() };
+            for (const [poolName, config] of Object.entries(dailyPoolConfig)) {
+                status.textContent = `正在更新${poolName}，请稍候……`;
+                try {
+                    const history = await loadPoolHistory(config.g);
+                    if (!history.length) throw new Error("历史数据为空");
+                    results[poolName] = {
+                        numbers: rankDaily24(history, config.strategy),
+                        sample: history.length,
+                        latestDate: history[history.length - 1].date
+                    };
+                } catch (error) {
+                    results[poolName] = { error: error.message || "未知错误" };
+                }
+            }
+            button.disabled = false;
+            const successCount = Object.keys(dailyPoolConfig).filter(name => results[name] && !results[name].error).length;
+            if (successCount) {
+                localStorage.setItem(predictionCacheKey, JSON.stringify({ date: localDateKey(), results }));
+                renderDailyPredictions(results, false);
+            } else {
+                renderDailyPredictions(results, false);
+                status.className = "prediction-status error";
+                status.textContent = "三个奖池都获取失败，请稍后点击“刷新最新数据”重试。";
+            }
+        }
+
+        function setNumberCount(value, clearZodiac = true) {
+            const count = Math.max(1, Math.min(49, Math.round(Number(value) || 1)));
+            el("numberCount").value = count;
+            el("numberCountInput").value = count;
+            el("numberCountText").textContent = count;
+            if (clearZodiac) {
+                selectedZodiacs.clear();
+                document.querySelectorAll(".zodiac").forEach(button => button.classList.remove("selected"));
+                el("zodiacSummary").textContent = "固定选择 " + count + " 个不同号码。";
+            }
+            updateCalculator();
+        }
+
+        function updateCalculator() {
+            const count = Number(el("numberCount").value);
+            const stake = Math.max(0.01, Number(el("stakePerNumber").value) || 1);
+            const returnMultiple = el("payoutMode").value === "gross" ? 47 : 48;
+            const total = count * stake;
+            const hitNet = returnMultiple * stake - total;
+            const missNet = -total;
+            const hitChance = count / 49;
+            const profitChance = hitNet > 0 ? hitChance : 0;
+            const expected = hitChance * hitNet + (1 - hitChance) * missNet;
+            const expectedRate = expected / total * 100;
+
+            el("profitProbability").textContent = (profitChance * 100).toFixed(2) + "%";
+            el("totalStake").textContent = total.toFixed(2) + "元";
+            el("hitProfit").textContent = money(hitNet);
+            el("missLoss").textContent = money(missNet);
+            el("expectedProfit").textContent = money(expected);
+            el("lossRate").textContent = expectedRate.toFixed(2) + "%";
+            el("hitProfit").className = "value " + (hitNet > 0 ? "positive" : "negative");
+
+            const uncovered = 49 - count;
+            if (hitNet > 0) {
+                el("calcExplain").innerHTML = `覆盖 ${count} 个号码时，本期有 <strong>${count}/49</strong> 的机会净盈利 ${money(hitNet)}；另外 ${uncovered}/49 的情况会损失 ${total.toFixed(2)} 元。提高命中率只是把收益变小、把少数失败变成大亏，不能消除负期望。`;
+            } else {
+                el("calcExplain").innerHTML = `覆盖 ${count} 个号码时，即使中奖也为 ${money(hitNet)}，所以真正盈利概率是 0。不要把“必中奖”误当成“必盈利”。`;
+            }
+        }
+
+        function renderZodiacs() {
+            el("zodiacGrid").innerHTML = Object.entries(zodiacNumbers).map(([animal, numbers]) =>
+                `<button type="button" class="zodiac" data-animal="${animal}">${animal}（${numbers.length}码）</button>`
+            ).join("") + `<button type="button" class="clear-zodiac">清空</button>`;
+
+            el("zodiacGrid").addEventListener("click", event => {
+                const button = event.target.closest("button");
+                if (!button) return;
+                if (button.classList.contains("clear-zodiac")) {
+                    selectedZodiacs.clear();
+                    document.querySelectorAll(".zodiac").forEach(item => item.classList.remove("selected"));
+                    el("zodiacSummary").textContent = "尚未选择生肖。";
+                    setNumberCount(1, false);
+                    return;
+                }
+                const animal = button.dataset.animal;
+                if (!animal) return;
+                if (selectedZodiacs.has(animal)) {
+                    selectedZodiacs.delete(animal);
+                    button.classList.remove("selected");
+                } else {
+                    selectedZodiacs.add(animal);
+                    button.classList.add("selected");
+                }
+
+                const numbers = [...new Set([...selectedZodiacs].flatMap(item => zodiacNumbers[item]))].sort((a, b) => a - b);
+                if (numbers.length === 0) {
+                    el("zodiacSummary").textContent = "尚未选择生肖。";
+                    setNumberCount(1, false);
+                } else {
+                    setNumberCount(numbers.length, false);
+                    el("zodiacSummary").textContent = `已选：${[...selectedZodiacs].join("、")}；共 ${numbers.length} 个号码：${numbers.join("、")}`;
+                }
+            });
+        }
+
+        function render(poolName) {
+            const pool = pools[poolName];
+            el("sample").textContent = pool.sample.toLocaleString("zh-CN");
+            el("chiP").textContent = pool.chiP.toFixed(3);
+            el("logLoss").textContent = "+" + pool.logLoss.toFixed(3);
+            el("poolName").textContent = poolName;
+            el("judgePool").textContent = poolName;
+            el("range").textContent = pool.range;
+            el("intervalNote").textContent = pool.interval;
+
+            el("candidates").innerHTML = pool.candidates.map(([number, probability]) => `
+                <div class="candidate">
+                    <div class="number">${String(number).padStart(2, "0")}</div>
+                    <div class="probability">${probability.toFixed(2)}%</div>
+                </div>`).join("");
+
+            el("chart").innerHTML = pool.backtests.map(([label, rate]) => `
+                <div class="bar-row">
+                    <div class="bar-label">${label}</div>
+                    <div class="track" title="${rate.toFixed(2)}%">
+                        <div class="fill" style="width:${Math.min(rate / 30 * 100, 100)}%"></div>
+                        <div class="baseline" title="随机基准 20.41%"></div>
+                    </div>
+                    <div class="bar-value">${rate.toFixed(2)}%</div>
+                </div>`).join("");
+
+            el("backtestRows").innerHTML = pool.backtests.map(([label, rate, hits, p]) => `
+                <tr><td>${label}</td><td class="number-cell">${hits}</td><td class="number-cell">${rate.toFixed(2)}%</td><td class="number-cell">${p.toFixed(3)}</td><td class="status">无统计证据</td></tr>`).join("");
+
+            el("correlationRows").innerHTML = pool.correlations.map(([years, value]) => `
+                <tr><td>${years}</td><td class="number-cell">${value.toFixed(3)}</td><td>${Math.abs(value) < 0.2 ? "很弱" : "弱"}</td></tr>`).join("");
+
+            el("categoryNotes").innerHTML = pool.notes.map(note => `<li>${note}</li>`).join("");
+        }
+
+        document.querySelectorAll(".tab").forEach(button => {
+            button.addEventListener("click", () => {
+                document.querySelectorAll(".tab").forEach(item => item.classList.remove("active"));
+                button.classList.add("active");
+                render(button.dataset.pool);
+            });
+        });
+
+        el("numberCount").addEventListener("input", event => setNumberCount(event.target.value));
+        el("numberCountInput").addEventListener("input", event => setNumberCount(event.target.value));
+        el("stakePerNumber").addEventListener("input", updateCalculator);
+        el("payoutMode").addEventListener("change", updateCalculator);
+        el("refreshPrediction").addEventListener("click", () => updateDailyPredictions(true));
+        el("recoveryPool").addEventListener("change", renderRecovery);
+        el("recordWin").addEventListener("click", () => recordRecoveryResult(true));
+        el("recordLoss").addEventListener("click", () => recordRecoveryResult(false));
+        el("undoRecovery").addEventListener("click", () => {
+            const poolName = el("recoveryPool").value;
+            recoveryState[poolName].pop();
+            saveRecoveryState();
+            renderRecovery();
+        });
+        document.querySelectorAll(".quick").forEach(button => {
+            button.addEventListener("click", () => setNumberCount(button.dataset.count));
+        });
+
+        renderZodiacs();
+        updateCalculator();
+        renderRecovery();
+        render("新澳");
+        updateDailyPredictions(false);
+    </script>
+</body>
+</html>
