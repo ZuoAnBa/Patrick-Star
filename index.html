@@ -69,20 +69,6 @@
             gap: 5px; /* 水平间距是 5px */
         }
 
-        .top .leftArea > .thresholdBox {
-            align-items: center;
-            flex-wrap: nowrap;
-        }
-
-        .fetchStatusRow {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-height: 20px;
-            margin-top: 4px;
-            font-size: 12px;
-        }
-
         .versionBadge {
             margin-left: auto;
             align-self: center;
@@ -98,6 +84,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            margin-top: 6px;
             font-size: 12px;
             color: #555;
         }
@@ -118,6 +105,18 @@
             border: none;
             padding: 8px 12px;
             border-radius: 4px;
+        }
+
+        .top .analysisLink {
+            display: inline-flex;
+            align-items: center;
+            background-color: #456f9a;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            white-space: nowrap;
         }
 
         /* 样式设置 */
@@ -366,18 +365,6 @@
         <div class="leftArea">
             <div class="thresholdBox">
                 <button id="btn">获取开奖</button>
-                <div class="routeBar">
-                    <label for="dataRouteSelect">数据线路：</label>
-                    <select id="dataRouteSelect">
-                        <option value="public-auto">公共代理自动切换</option>
-                        <option value="mirror">公共线路 1（CORSmirror）</option>
-                        <option value="render">公共线路 2（Render）</option>
-                        <option value="local-first">本机优先，失败转公共</option>
-                    </select>
-                </div>
-            </div>
-            <div class="fetchStatusRow">
-                <span id="dataRouteStatus">等待请求</span>
                 <div id="loading" class="loading" style="display: none;">
                     <div class="spinner"></div>
                     <span>正在获取开奖数据...</span>
@@ -392,11 +379,22 @@
                 <button id="btnXianggang">香港</button>
                 <button id="btnUpdataHistroy">更新</button>
                 <button id="btnExportHistory">导出历史</button>
+                <a class="analysisLink" href="probability-analysis.html" hidden>概率分析</a>
                 <div id="loadingHistroy" class="loading" style="display: none;">
                 <div class="spinner"></div>
                 <span>正在更新历史开奖...</span>
                 </div>
                 <span class="versionBadge" title="软件版本">v1.6.0</span>
+            </div>
+            <div class="routeBar">
+                <label for="dataRouteSelect">数据线路：</label>
+                <select id="dataRouteSelect">
+                    <option value="public-auto">公共代理自动切换</option>
+                    <option value="mirror">公共线路 1（CORSmirror）</option>
+                    <option value="render">公共线路 2（Render）</option>
+                    <option value="local-first">本机优先，失败转公共</option>
+                </select>
+                <span id="dataRouteStatus">等待请求</span>
             </div>
         </div>
     </div>
@@ -1289,24 +1287,13 @@
         async function updateAllHistoryData() {
             const results = [];
 
-            // 公共代理对短时间并发请求有限制，因此按奖池、年份逐个请求。
+            // 每个地区一批，每批最多 4 个请求，避免触发公共代理限流。
             for (let mode = 0; mode < FuncMode.FuncModeCNT; mode++) {
                 const g = ModeToG[mode];
-                for (let y = 0; y < Years.length; y++) {
-                    if (results.length && dataRouteMode !== "local-first") await wait(450);
-                    let module;
-                    for (let attempt = 0; attempt < 2; attempt++) {
-                        try {
-                            module = await loadHistoryToModule(g, Years[y]);
-                            break;
-                        } catch (error) {
-                            if (attempt === 1) throw error;
-                            setDataRouteStatus("线路暂时繁忙，2秒后重试…", "warn");
-                            await wait(2000);
-                        }
-                    }
-                    results.push({ mode, y, module });
-                }
+                const batch = Years.map((year, y) =>
+                    loadHistoryToModule(g, year).then(module => ({ mode, y, module }))
+                );
+                results.push(...await Promise.all(batch));
             }
 
             for (const result of results) {
@@ -1409,18 +1396,6 @@
 
             return rows.length - 1;
         }
-
-        const dataRouteSelect = document.getElementById("dataRouteSelect");
-        dataRouteSelect.value = dataRouteMode;
-        setDataRouteStatus(dataRouteMode === "local-first" ? "已选择本机优先" : "已选择公共代理");
-        dataRouteSelect.addEventListener("change", () => {
-            dataRouteMode = dataRouteSelect.value;
-            try { localStorage.setItem(dataRouteStoreKey, dataRouteMode); } catch { }
-            setDataRouteStatus(
-                dataRouteMode === "local-first" ? "已切换：本机优先" : "已切换：公共线路",
-                "warn"
-            );
-        });
 
         document.getElementById("btnUpdataHistroy").onclick = async () => {
             loadingHistroy.style.display = "flex";
