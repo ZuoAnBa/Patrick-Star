@@ -69,6 +69,20 @@
             gap: 5px; /* 水平间距是 5px */
         }
 
+        .top .leftArea > .thresholdBox {
+            align-items: center;
+            flex-wrap: nowrap;
+        }
+
+        .fetchStatusRow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 20px;
+            margin-top: 4px;
+            font-size: 12px;
+        }
+
         .versionBadge {
             margin-left: auto;
             align-self: center;
@@ -84,7 +98,6 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            margin-top: 6px;
             font-size: 12px;
             color: #555;
         }
@@ -353,6 +366,18 @@
         <div class="leftArea">
             <div class="thresholdBox">
                 <button id="btn">获取开奖</button>
+                <div class="routeBar">
+                    <label for="dataRouteSelect">数据线路：</label>
+                    <select id="dataRouteSelect">
+                        <option value="public-auto">公共代理自动切换</option>
+                        <option value="mirror">公共线路 1（CORSmirror）</option>
+                        <option value="render">公共线路 2（Render）</option>
+                        <option value="local-first">本机优先，失败转公共</option>
+                    </select>
+                </div>
+            </div>
+            <div class="fetchStatusRow">
+                <span id="dataRouteStatus">等待请求</span>
                 <div id="loading" class="loading" style="display: none;">
                     <div class="spinner"></div>
                     <span>正在获取开奖数据...</span>
@@ -372,16 +397,6 @@
                 <span>正在更新历史开奖...</span>
                 </div>
                 <span class="versionBadge" title="软件版本">v1.6.0</span>
-            </div>
-            <div class="routeBar">
-                <label for="dataRouteSelect">数据线路：</label>
-                <select id="dataRouteSelect">
-                    <option value="public-auto">公共代理自动切换</option>
-                    <option value="mirror">公共线路 1（CORSmirror）</option>
-                    <option value="render">公共线路 2（Render）</option>
-                    <option value="local-first">本机优先，失败转公共</option>
-                </select>
-                <span id="dataRouteStatus">等待请求</span>
             </div>
         </div>
     </div>
