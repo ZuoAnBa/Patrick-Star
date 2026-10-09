@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>注单统计 · 逐号记账</title>
+    <link rel="stylesheet" href="css/bet-statistics.css?v=1.13.8">
+</head>
+<body>
+<header><div><small>NUM TO NUM · 私人账本</small><h1>注单统计</h1></div><a href="index.html">返回首页</a></header>
+<main>
+    <section class="toolbar">
+        <label for="ledgerDate">记账 / 查看日期（北京时间）<input id="ledgerDate" type="date"></label>
+        <label for="zodiacYear">开奖生肖年份<select id="zodiacYear"></select></label>
+        <button id="todayButton">回到今日</button>
+        <button id="refreshDraws">获取最新开奖</button>
+        <button id="exportLedger">备份注单</button>
+        <span id="fetchStatus" role="status" aria-live="polite"></span>
+    </section>
+    <p id="zodiacHint" class="muted"></p>
+    <div class="layout">
+        <section class="entry card">
+            <h2>录入文字注单</h2>
+            <p class="muted">没写奖池默认新澳；“新 / 新澳 / 新奥”是新澳，“老”是老澳，“香 / 港 / 香港”都是香港。奖池可以和注单同行，如“新奥特35=20”，后续行沿用该奖池。</p>
+            <label for="betSlipText">注单文字（支持特码、特串、连肖、复式、一肖、尾数、平码）</label>
+            <textarea id="betSlipText" placeholder="大双各10&#10;合数大的大双各10&#10;&#10;老&#10;小各10&#10;小单各10&#10;&#10;香&#10;06-30-42-12-24-14-20-40特码各10"></textarea>
+            <div class="actions"><button id="fillExample">特码示例</button><button id="fillComboExample">组合示例</button><button id="fillDragExample">拖尾示例</button><button id="saveSlip" class="primary" disabled>确认录入所选日期</button></div>
+            <div id="previewMessage" role="status" aria-live="polite"></div>
+            <div id="preview"></div><strong id="previewTotal"></strong>
+            <p class="muted">纯号码列表可以连续换行，最后统一写“各金额”，例如两行“03 07”和“08 13各10”会合并为4个特码各10；不能跨空行或奖池标题合并。“0头2头3头各5”按对应特码逐号计费：0头为01～09，2头为20～29，3头为30～39，共29码×5＝145元；与生肖或其他号码重复下注时累加金额。</p>
+            <p class="muted">平码可写“平码09/15各10”或“09/15平码各10”，每个号码分别计费，仅6个平码参与判中；分类合计可写“平20”。“特串”与“特碰”同义，如“特串19拖24各5”。统计中两类特碰合并为“特串（特碰）”，连肖按组合大小分项。</p>
+            <p class="muted">“/”可分隔号码，末尾多一个“/”也可识别，如“09/15/各20”。同一行多条完整注单可用逗号分开，如“09/15各10，平特肖鼠300，09/15/各20，”。“平特肖鼠300”＝“鼠一肖300”，按全部7个开奖号码判中，不拆成鼠号各300。分类合计请另起一行。</p>
+            <p class="muted">“35=20”表示35号各20，“猴虎各数10”同“猴虎各10”；“号码复二中二各4三中三2”中，三中三2表示每组2元。单个“特35=20”优先按注单识别，金额核对请用“特20+15+80=115”或“合计115”。</p>
+            <p class="muted">支持简写：“猪羊—20”＝猪羊对应特码各20；“三中三 12 19 44 —-20”＝该组20元；“平特—兔猪鼠狗—4连—30”＝4连肖各30。末尾长横线（—）或连续短横线（--）可代替“各”，“连”可代替“连肖”。纯数字号码列表请用“各”明确金额，避免与号码分隔符混淆。</p>
+            <p class="muted">普通特码“各10”按号码计费，组合玩法“各10”按组计费。只写“猪马各30”等生肖、不带玩法字样时，展开为对应特码，每个号码30元；明确写一肖、连肖等仍按原玩法。相同号码或组合叠加金额。手写“特 / 三 / 连 / 肖 / 尾”为分类核对（“三”含三中三、二中二、特碰），合计为整单核对，不重复记账。</p>
+            <details><summary>玩法与计费规则</summary><p class="muted">连肖：拖字前全部必带，再从后面选够组合大小；全部7个开奖号码的生肖参与判中。三中三、二中二：仅6个平码参与。特碰均不分方向：每组任一号码开特码、另一个出现在平码就算中；两个都在平码不算。“特碰19拖4尾”是19分别与04/14/24/34/44配对，19不必固定开特码。两批号码相碰仍按两批数量相乘计费，交叉同号不列为有效组合，正反同一组合合并金额。“鼠复特碰各5”先按所选年份展开鼠号，两两组成不重复组合。旧记录也按此规则判中，不改变原下注金额。一肖、尾数：7个号码任一符合就中，同一注不按出现次数重复中奖。号码可用点号、逗号或短横线分隔；金额保留小数点。49号按所选条件参与。仅记账，不提交下注。</p></details>
+            <details><summary>已录入文字注单（查看 / 删除）</summary>
+                <p class="muted">可删除整张注单或其中一条解析明细，确认后统计自动重算。删除记录保留，可按所选日期逐次撤销；刷新后仍可恢复。原始文字仅作留档，统计只计算未删除明细。</p>
+                <button id="undoDelete" disabled>撤销最近删除</button><p id="ledgerActionMessage" role="status" aria-live="polite"></p>
+                <div id="savedSlips"></div>
+            </details>
+        </section>
+        <section class="results">
+            <div class="overview card"><small id="dateTitle"></small><h2>所选日期已录入 <span id="dayTotal">0</span> 元</h2><p id="settlementSummary"></p><div id="financeSummary"></div><p class="muted">收单方净盈亏＝收到下注额－中奖应赔－返水。赔率均含本金，返水按全部下注额计算，无论输赢都返；应赔金额不含另算的返水。正数为你盈利，负数为你亏损。这里按当前规则、所选年份，将所选日期注单对照最近一期，并非该日历史结算；刷新不记入新的收付款。</p>
+                <details><summary>查看赔率、返水及计算口径</summary>
+                    <ul class="rateRules">
+                        <li>特码：47倍，返水4%。</li>
+                        <li>三中三：新澳、老澳750倍，香港720倍，返水15%。</li>
+                        <li>二中二：65倍；特串（特碰）：160倍；均返水15%。</li>
+                        <li>平特肖（一肖）：2倍，马1.8倍，均返水6%。</li>
+                        <li>平特尾（尾数）：1.8倍、返水1%；0尾2倍、返水2%。</li>
+                        <li>2连肖4倍，带马3.8倍；3连肖10倍，带马9倍。</li>
+                        <li>4连肖30倍，带马28倍；5连肖100倍，带马90倍。2至5连肖均返水10%（0.1）。</li>
+                        <li>平码：7倍，返水15%，仅6个平码参与。</li>
+                    </ul>
+                    <p class="muted">“带马”按每个下注组合是否包含马判断，不按整张注单或开奖号码是否有马判断。一肖、尾数同一组只赔一次。已收费的交叉同号特碰也返15%，但不能命中。每个奖池内按玩法分项及相同赔率/返水率合计后四舍五入至分；连肖按连数分别计算再汇总。6连及以上未提供规则，不擅自计算。现有记录也套用此规则，未改写原注单或下注额。</p>
+                </details>
+            </div>
+            <section class="card categoryCard" aria-labelledby="categoryTitle">
+                <div class="categoryHeading"><div><small>按日期 · 按玩法 · 按奖池</small><h2 id="categoryTitle">分类总账</h2></div><span>金额单位：元</span></div>
+                <p class="muted">各奖池独立判中，仅金额合并展示。特碰、三中三、二中二归入“三项合计”，2至5连肖归入“连肖合计”；各子项均已包含在父项内，不重复计入总额。三项分别按原赔率和返水计算后相加。1注指一个号码或组合的一次计费，重复下注会累加；命中下注额是本金，不是奖金。最后一列为你的收单净盈亏。</p>
+                <div id="categorySummary" class="categoryScroll" tabindex="0" role="region" aria-label="玩法分类汇总，可横向滚动"></div>
+                <p class="muted">无完整开奖结果的下注额标为“待结果”，不当作未中；有待结果或规则未设时，总应赔及净盈亏显示“待核算”。已知返水无论开奖与否都先计算。下方可展开各奖池的号码、组合及赔率明细。表格可左右滑动。</p>
+            </section>
+            <div id="poolCards"></div>
+        </section>
+    </div>
+    <footer>记录保存在当前浏览器、当前网址；清理浏览器数据可能丢失，请定期备份。原首页只有分类总额的记录无法还原逐号码明细，不计入这里；已有文字注单首次打开会自动迁入。本页可补记已开奖日期，统计不等同于真实下注凭证。</footer>
+</main>
+<script src="js/bet-slip.js?v=1.13.8"></script>
+<script src="js/bet-stats.js?v=1.13.8"></script>
+<script src="js/bet-statistics-page.js?v=1.13.8"></script>
+</body>
+</html>
